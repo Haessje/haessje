@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>로그인 — 했제</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <style>
+    body { display: flex; flex-direction: column; min-height: 100vh; }
+    .auth-wrap {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      padding: 100px 24px 60px;
+    }
+    .auth-box {
+      width: 100%; max-width: 440px;
+      background: var(--card-bg); border: 1px solid var(--border);
+      border-radius: 16px; padding: 48px 40px;
+    }
+    .auth-logo { font-family:'Montserrat',sans-serif; font-size:20px; font-weight:900; margin-bottom:32px; }
+    .auth-title { font-size:28px; font-weight:800; margin-bottom:8px; }
+    .auth-sub { color:var(--gray); font-size:14px; margin-bottom:36px; }
+    .form-group { display:flex; flex-direction:column; gap:8px; margin-bottom:20px; }
+    .form-group label { font-size:13px; font-weight:600; color:#ccc; }
+    .form-group input {
+      background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+      border-radius:8px; padding:14px 16px; color:var(--white); font-size:15px;
+      transition: border-color 0.2s; outline:none; width:100%;
+    }
+    .form-group input:focus { border-color: var(--lime); }
+    .err { color:#ff5555; font-size:13px; margin-top:-12px; display:none; }
+    .auth-footer { text-align:center; margin-top:24px; color:var(--gray); font-size:14px; }
+    .auth-footer a { color:var(--lime); font-weight:600; }
+  </style>
+</head>
+<body>
+<nav id="navbar">
+  <a href="/" class="logo">Haessje<span class="dot">.</span></a>
+</nav>
+
+<div class="auth-wrap">
+  <div class="auth-box">
+    <div class="auth-logo">Haessje<span class="dot">.</span></div>
+    <h1 class="auth-title">로그인</h1>
+    <p class="auth-sub">계정에 로그인하여 서비스를 이용하세요</p>
+
+    <form id="login-form">
+      <div class="form-group">
+        <label>이메일</label>
+        <input type="email" id="email" placeholder="example@email.com" required />
+      </div>
+      <div class="form-group">
+        <label>비밀번호</label>
+        <input type="password" id="password" placeholder="비밀번호 입력" required />
+      </div>
+      <p class="err" id="err-msg"></p>
+      <button type="submit" class="btn-lime btn-full" style="margin-top:8px;" id="submit-btn">
+        로그인
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      계정이 없으신가요? <a href="/register">회원가입</a>
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('submit-btn');
+  const err = document.getElementById('err-msg');
+  btn.textContent = '로그인 중...'; btn.disabled = true; err.style.display = 'none';
+
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      err.textContent = data.error; err.style.display = 'block';
+    } else {
+      window.location.href = '/dashboard';
+    }
+  } catch {
+    err.textContent = '서버 오류가 발생했습니다.'; err.style.display = 'block';
+  } finally {
+    btn.textContent = '로그인'; btn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>

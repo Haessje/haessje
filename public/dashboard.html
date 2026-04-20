@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>내 서비스 — 했제</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <style>
+    .dash-wrap { padding: 100px 24px 60px; min-height: 100vh; }
+    .dash-header { margin-bottom: 48px; }
+    .dash-header h1 { font-size: 32px; font-weight: 900; margin-bottom: 8px; }
+    .dash-header p { color: var(--gray); }
+    .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 900px; }
+    .dash-card {
+      background: var(--card-bg); border: 1px solid var(--border);
+      border-radius: 14px; padding: 32px;
+    }
+    .dash-card h3 { font-size: 14px; color: var(--gray); margin-bottom: 16px; letter-spacing: 0.1em; }
+    .plan-badge {
+      display: inline-block; padding: 6px 18px; border-radius: 20px;
+      font-size: 14px; font-weight: 800; letter-spacing: 0.05em;
+      background: var(--lime-dim); color: var(--lime); border: 1px solid var(--lime);
+      margin-bottom: 12px;
+    }
+    .plan-none { color: var(--gray); font-size: 15px; }
+    .plan-expires { color: var(--gray); font-size: 13px; margin-top: 8px; }
+    .user-name { font-size: 24px; font-weight: 800; margin-bottom: 4px; }
+    .user-email { color: var(--gray); font-size: 14px; }
+    .user-since { color: rgba(136,136,136,0.6); font-size: 13px; margin-top: 8px; }
+    .orders-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    .orders-table th { text-align: left; font-size: 12px; color: var(--gray); padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+    .orders-table td { padding: 14px 0; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .status-done { color: var(--lime); font-weight: 700; }
+    .status-pending { color: var(--gray); }
+    .dash-actions { display: flex; gap: 12px; margin-top: 32px; }
+    .no-plan-cta { margin-top: 16px; }
+    @media (max-width:700px) { .dash-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<nav id="navbar">
+  <a href="/" class="logo">Haessje<span class="dot">.</span></a>
+  <div class="nav-right">
+    <button class="btn-ghost" onclick="logout()">로그아웃</button>
+  </div>
+</nav>
+
+<div class="dash-wrap">
+  <div class="container">
+    <div class="dash-header">
+      <h1>내 서비스 <span id="greeting-name"></span></h1>
+      <p>구독 현황과 주문 내역을 확인하세요</p>
+    </div>
+
+    <div class="dash-grid">
+      <!-- 구독 현황 -->
+      <div class="dash-card">
+        <h3>구독 현황</h3>
+        <div id="plan-section">
+          <p class="plan-none">로딩 중...</p>
+        </div>
+      </div>
+
+      <!-- 계정 정보 -->
+      <div class="dash-card">
+        <h3>계정 정보</h3>
+        <div id="user-section">
+          <p class="plan-none">로딩 중...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 주문 내역 -->
+    <div class="dash-card" style="max-width:900px; margin-top:24px;">
+      <h3>주문 내역</h3>
+      <div id="orders-section">
+        <p class="plan-none">로딩 중...</p>
+      </div>
+    </div>
+
+    <div class="dash-actions">
+      <a href="/" class="btn-ghost">홈으로</a>
+      <a href="/#packages" class="btn-lime" id="upgrade-btn">플랜 업그레이드</a>
+      <a href="/admin" class="btn-ghost hidden" id="admin-link">관리자 콘솔</a>
+    </div>
+  </div>
+</div>
+
+<script>
+const PLAN_NAMES = { start: '스타트패키지', vip: 'VIP서비스', svip: 'S-VIP서비스' };
+
+async function loadDashboard() {
+  try {
+    const [meRes, ordersRes] = await Promise.all([
+      fetch('/api/auth/me', { credentials: 'include' }),
+      fetch('/api/payment/orders', { credentials: 'include' }),
+    ]);
+
+    if (!meRes.ok) { window.location.href = '/login'; return; }
+
+    const { user } = await meRes.json();
+    const { orders } = await ordersRes.json();
+
+    // 인사
+    document.getElementById('greeting-name').textContent = `— ${user.name}님`;
+
+    // 구독 현황
+    const planSection = document.getElementById('plan-section');
+    if (user.plan) {
+      const expires = new Date(user.plan_expires_at).toLocaleDateString('ko-KR');
+      planSection.innerHTML = `
+        <div class="plan-badge">${PLAN_NAMES[user.plan] || user.plan}</div>
+        <p class="plan-expires">만료일: ${expires}</p>
+        <a href="/#packages" class="btn-lime" style="margin-top:16px; display:inline-block;">플랜 변경</a>
+      `;
+    } else {
+      planSection.innerHTML = `
+        <p class="plan-none">구독 중인 플랜이 없습니다</p>
+        <a href="/#packages" class="btn-lime no-plan-cta">지금 시작하기 →</a>
+      `;
+    }
+
+    // 계정 정보
+    const since = new Date(user.created_at).toLocaleDateString('ko-KR');
+    document.getElementById('user-section').innerHTML = `
+      <p class="user-name">${user.name}</p>
+      <p class="user-email">${user.email}</p>
+      ${user.phone ? `<p class="user-email">${user.phone}</p>` : ''}
+      <p class="user-since">가입일: ${since}</p>
+    `;
+
+    // 주문 내역
+    if (orders.length === 0) {
+      document.getElementById('orders-section').innerHTML = '<p class="plan-none">주문 내역이 없습니다</p>';
+    } else {
+      document.getElementById('orders-section').innerHTML = `
+        <table class="orders-table">
+          <thead>
+            <tr><th>플랜</th><th>금액</th><th>상태</th><th>주문일</th></tr>
+          </thead>
+          <tbody>
+            ${orders.map(o => `
+              <tr>
+                <td>${PLAN_NAMES[o.plan] || o.plan}</td>
+                <td>₩${o.amount.toLocaleString()}</td>
+                <td class="status-${o.status}">${o.status === 'done' ? '결제완료' : '대기중'}</td>
+                <td>${new Date(o.created_at).toLocaleDateString('ko-KR')}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+  } catch (e) {
+    window.location.href = '/login';
+  }
+}
+
+async function logout() {
+  await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+  window.location.href = '/';
+}
+
+loadDashboard();
+
+// 관리자 링크 노출 여부 체크
+fetch('/api/admin/check', { credentials: 'include' })
+  .then(r => r.ok && document.getElementById('admin-link').classList.remove('hidden'))
+  .catch(() => {});
+</script>
+</body>
+</html>

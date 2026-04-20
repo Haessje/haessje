@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: haessje
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: JWT_SECRET
+        generateValue: true
+      - key: TOSS_CLIENT_KEY
+        sync: false
+      - key: TOSS_SECRET_KEY
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: BASE_URL
+        value: https://haessje.onrender.com
+
+# 주의: Render 무료 티어는 파일 시스템이 재배포 시 초기화됩니다.
+# 실제 운영 시 Starter 플랜($7/월) + disk 추가를 권장합니다.
+# 또는 Supabase 등 외부 DB로 마이그레이션하세요.

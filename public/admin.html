@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>관리자 — 했제</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <style>
+    .admin-wrap { padding: 100px 24px 60px; max-width: 1280px; margin: 0 auto; }
+    .admin-header { margin-bottom: 32px; display: flex; justify-content: space-between; align-items: end; flex-wrap: wrap; gap: 16px; }
+    .admin-header h1 { font-size: 28px; font-weight: 900; }
+    .admin-header p { color: var(--gray); font-size: 14px; margin-top: 4px; }
+
+    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 40px; }
+    .stat-box { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 24px; }
+    .stat-box .label { font-size: 12px; color: var(--gray); letter-spacing: 0.1em; }
+    .stat-box .value { font-size: 28px; font-weight: 900; font-family: 'Montserrat', sans-serif; color: var(--lime); margin-top: 8px; }
+
+    .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+    .tab-btn {
+      background: none; border: none; color: var(--gray); padding: 14px 20px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      border-bottom: 2px solid transparent; transition: color 0.2s, border-color 0.2s;
+    }
+    .tab-btn:hover { color: var(--white); }
+    .tab-btn.active { color: var(--lime); border-bottom-color: var(--lime); }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    table { width: 100%; border-collapse: collapse; background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    th, td { padding: 14px 16px; text-align: left; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    th { background: rgba(255,255,255,0.03); color: var(--gray); font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; font-size: 11px; }
+    tr:hover { background: rgba(255,255,255,0.02); }
+    tr:last-child td { border-bottom: none; }
+
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+    .badge-plan-start { background: rgba(255,255,255,0.1); color: var(--white); }
+    .badge-plan-vip { background: var(--lime-dim); color: var(--lime); }
+    .badge-plan-svip { background: rgba(255,215,0,0.15); color: var(--gold); }
+    .badge-plan-none { background: rgba(136,136,136,0.15); color: var(--gray); }
+    .badge-done { background: rgba(212,255,0,0.15); color: var(--lime); }
+    .badge-pending { background: rgba(136,136,136,0.15); color: var(--gray); }
+
+    .row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .btn-sm { padding: 6px 12px; font-size: 11px; border-radius: 4px; cursor: pointer; border: none; font-weight: 700; }
+    .btn-extend { background: var(--lime-dim); color: var(--lime); border: 1px solid var(--lime); }
+    .btn-remove { background: rgba(255,85,85,0.1); color: #ff5555; border: 1px solid rgba(255,85,85,0.4); }
+    .btn-assign { background: rgba(255,255,255,0.06); color: var(--white); border: 1px solid var(--border); }
+
+    .empty { text-align: center; color: var(--gray); padding: 48px; }
+
+    @media (max-width: 900px) {
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      table { font-size: 12px; }
+      th, td { padding: 10px 8px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav id="navbar">
+  <a href="/" class="logo">Haessje<span class="dot">.</span> <span style="color:var(--lime); font-size:13px; margin-left:8px;">ADMIN</span></a>
+  <div class="nav-right">
+    <a href="/dashboard" class="btn-ghost">대시보드</a>
+    <button class="btn-ghost" onclick="logout()">로그아웃</button>
+  </div>
+</nav>
+
+<div class="admin-wrap">
+  <div class="admin-header">
+    <div>
+      <h1>관리자 콘솔</h1>
+      <p id="admin-greeting">Loading...</p>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-box">
+      <div class="label">전체 회원</div>
+      <div class="value" id="stat-users">0</div>
+    </div>
+    <div class="stat-box">
+      <div class="label">구독 중인 회원</div>
+      <div class="value" id="stat-active">0</div>
+    </div>
+    <div class="stat-box">
+      <div class="label">누적 결제건</div>
+      <div class="value" id="stat-paid">0</div>
+    </div>
+    <div class="stat-box">
+      <div class="label">누적 매출</div>
+      <div class="value" id="stat-revenue">₩0</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="users">회원 관리</button>
+    <button class="tab-btn" data-tab="orders">주문 내역</button>
+  </div>
+
+  <!-- 회원 패널 -->
+  <div class="panel active" id="panel-users">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th><th>이메일</th><th>이름</th><th>연락처</th>
+          <th>현재 플랜</th><th>만료일</th><th>가입일</th><th style="width:240px;">작업</th>
+        </tr>
+      </thead>
+      <tbody id="users-body">
+        <tr><td colspan="8" class="empty">로딩 중...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 주문 패널 -->
+  <div class="panel" id="panel-orders">
+    <table>
+      <thead>
+        <tr>
+          <th>주문 ID</th><th>회원</th><th>플랜</th><th>금액</th><th>상태</th><th>주문일</th>
+        </tr>
+      </thead>
+      <tbody id="orders-body">
+        <tr><td colspan="6" class="empty">로딩 중...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const PLAN_NAMES = { start: '스타트', vip: 'VIP', svip: 'S-VIP' };
+
+function fmtDate(iso) { return iso ? new Date(iso).toLocaleDateString('ko-KR') : '-'; }
+function fmtWon(n) { return '₩' + Number(n).toLocaleString(); }
+
+async function checkAdmin() {
+  try {
+    const res = await fetch('/api/admin/check', { credentials: 'include' });
+    if (!res.ok) {
+      alert('관리자 권한이 없습니다.');
+      window.location.href = '/';
+      return false;
+    }
+    const data = await res.json();
+    document.getElementById('admin-greeting').textContent = `${data.email} 로 로그인됨`;
+    return true;
+  } catch {
+    window.location.href = '/login';
+    return false;
+  }
+}
+
+async function loadStats() {
+  const res = await fetch('/api/admin/stats', { credentials: 'include' });
+  const d = await res.json();
+  document.getElementById('stat-users').textContent = d.totalUsers;
+  document.getElementById('stat-active').textContent = d.activeSubs;
+  document.getElementById('stat-paid').textContent = d.paidCount;
+  document.getElementById('stat-revenue').textContent = fmtWon(d.totalRevenue);
+}
+
+async function loadUsers() {
+  const res = await fetch('/api/admin/users', { credentials: 'include' });
+  const { users } = await res.json();
+  const body = document.getElementById('users-body');
+
+  if (users.length === 0) {
+    body.innerHTML = '<tr><td colspan="8" class="empty">등록된 회원이 없습니다</td></tr>';
+    return;
+  }
+
+  body.innerHTML = users.map(u => {
+    const planBadge = u.plan
+      ? `<span class="badge badge-plan-${u.plan}">${PLAN_NAMES[u.plan]}</span>`
+      : `<span class="badge badge-plan-none">없음</span>`;
+    return `
+      <tr>
+        <td>#${u.id}</td>
+        <td>${u.email}</td>
+        <td>${u.name}</td>
+        <td>${u.phone || '-'}</td>
+        <td>${planBadge}</td>
+        <td>${fmtDate(u.plan_expires_at)}</td>
+        <td>${fmtDate(u.created_at)}</td>
+        <td>
+          <div class="row-actions">
+            <button class="btn-sm btn-assign" onclick="assignPlan(${u.id}, '${u.name}')">플랜 부여</button>
+            <button class="btn-sm btn-extend" onclick="extendPlan(${u.id}, '${u.plan || ''}')">30일 연장</button>
+            <button class="btn-sm btn-remove" onclick="removePlan(${u.id}, '${u.name}')">해제</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+async function loadOrders() {
+  const res = await fetch('/api/admin/orders', { credentials: 'include' });
+  const { orders } = await res.json();
+  const body = document.getElementById('orders-body');
+
+  if (orders.length === 0) {
+    body.innerHTML = '<tr><td colspan="6" class="empty">주문이 없습니다</td></tr>';
+    return;
+  }
+
+  body.innerHTML = orders.map(o => `
+    <tr>
+      <td style="font-family:monospace; font-size:11px; color:var(--gray);">${o.order_id}</td>
+      <td>${o.user_name || '-'}<br/><span style="color:var(--gray); font-size:11px;">${o.user_email || ''}</span></td>
+      <td><span class="badge badge-plan-${o.plan}">${PLAN_NAMES[o.plan]}</span></td>
+      <td>${fmtWon(o.amount)}</td>
+      <td><span class="badge badge-${o.status}">${o.status === 'done' ? '결제완료' : '대기'}</span></td>
+      <td>${new Date(o.created_at).toLocaleString('ko-KR')}</td>
+    </tr>
+  `).join('');
+}
+
+async function assignPlan(userId, userName) {
+  const plan = prompt(`${userName}님께 부여할 플랜을 선택하세요:\n\nstart / vip / svip`);
+  if (!plan || !['start','vip','svip'].includes(plan.trim())) return;
+  const days = prompt('부여 기간 (일):', '30');
+  if (!days) return;
+
+  const res = await fetch(`/api/admin/users/${userId}/plan`, {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ plan: plan.trim(), extendDays: Number(days) }),
+  });
+  const data = await res.json();
+  if (res.ok) { alert('적용되었습니다.'); loadUsers(); loadStats(); }
+  else alert(data.error || '오류');
+}
+
+async function extendPlan(userId, currentPlan) {
+  if (!currentPlan) { alert('현재 플랜이 없습니다. 먼저 플랜을 부여하세요.'); return; }
+  const days = prompt('연장할 일수:', '30');
+  if (!days) return;
+
+  const res = await fetch(`/api/admin/users/${userId}/plan`, {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ plan: currentPlan, extendDays: Number(days) }),
+  });
+  const data = await res.json();
+  if (res.ok) { alert('연장되었습니다.'); loadUsers(); loadStats(); }
+  else alert(data.error || '오류');
+}
+
+async function removePlan(userId, userName) {
+  if (!confirm(`${userName}님의 플랜을 해제하시겠습니까? (환불 처리)`)) return;
+  const res = await fetch(`/api/admin/users/${userId}/plan`, {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ plan: null }),
+  });
+  const data = await res.json();
+  if (res.ok) { alert('해제되었습니다.'); loadUsers(); loadStats(); }
+  else alert(data.error || '오류');
+}
+
+async function logout() {
+  await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+  window.location.href = '/';
+}
+
+// 탭 전환
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(`panel-${btn.dataset.tab}`).classList.add('active');
+  });
+});
+
+(async () => {
+  if (await checkAdmin()) {
+    await Promise.all([loadStats(), loadUsers(), loadOrders()]);
+  }
+})();
+</script>
+</body>
+</html>
