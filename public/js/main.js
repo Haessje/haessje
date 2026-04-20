@@ -50,10 +50,10 @@ gsap.timeline({ delay: 0.3 })
   .to('.hero-desc', { opacity: 1, duration: 0.7, ease: 'power2.out' }, '-=0.3')
   .to('.hero-cta', { opacity: 1, duration: 0.5 }, '-=0.2');
 
-// Hero 타이틀 내 span 초기 설정
+// Hero 타이틀 내 span 초기 설정 — innerHTML 사용으로 <em> 태그 보존
 document.querySelectorAll('.hero-title .line').forEach(line => {
-  const text = line.textContent;
-  line.innerHTML = `<span>${text}</span>`;
+  const html = line.innerHTML;
+  line.innerHTML = `<span>${html}</span>`;
 });
 gsap.set('.hero-title .line span', { y: '100%' });
 
