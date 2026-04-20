@@ -10,6 +10,13 @@ const PORT = process.env.PORT || 3000;
 app.use(cors({ origin: process.env.BASE_URL || 'http://localhost:3000', credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
+
+// 프론트엔드에 클라이언트 키 주입 (시크릿 키는 절대 노출 안 함)
+app.get('/config.js', (req, res) => {
+  res.type('application/javascript');
+  res.send(`window.__TOSS_CLIENT_KEY__ = ${JSON.stringify(process.env.TOSS_CLIENT_KEY || '')};`);
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api/auth', require('./routes/auth'));
