@@ -150,46 +150,63 @@ async function startPurchase(plan, amount, planName) {
   document.getElementById('modal-price').textContent = `₩${amount.toLocaleString()}/월`;
   document.getElementById('pay-modal').classList.remove('hidden');
 
-  // 토스페이먼츠 위젯 초기화
+  const confirmBtn = document.getElementById('pay-confirm-btn');
+  const wrapper = document.getElementById('payment-widget-wrapper');
+  confirmBtn.disabled = true;
+  confirmBtn.textContent = '결제 수단 로딩 중...';
+  wrapper.innerHTML = '<p style="color:#888;font-size:13px;text-align:center;padding:20px;">결제 위젯 불러오는 중...</p>';
+
+  const clientKey = window.__TOSS_CLIENT_KEY__;
+
   if (!window.TossPayments) {
-    // 토스 SDK 미로드 시 fallback
-    document.getElementById('payment-widget-wrapper').innerHTML =
-      '<p style="color:#888;font-size:13px;text-align:center;">결제 위젯 로딩 중...</p>';
-  } else {
-    try {
-      tossPayments = TossPayments(window.__TOSS_CLIENT_KEY__ || 'test_ck_placeholder');
-      widgets = tossPayments.widgets({ customerKey: 'anonymous' });
-      await widgets.setAmount({ currency: 'KRW', value: amount });
-      await widgets.renderPaymentMethods({
-        selector: '#payment-widget-wrapper',
-        variantKey: 'DEFAULT',
-      });
-    } catch (e) {
-      document.getElementById('payment-widget-wrapper').innerHTML =
-        '<p style="color:#888;font-size:13px;text-align:center;">결제 수단을 불러오는 중 오류가 발생했습니다.</p>';
-    }
+    wrapper.innerHTML = '<p style="color:#ff5555;font-size:13px;text-align:center;padding:20px;">❌ 토스페이먼츠 SDK 로드 실패<br/>네트워크 또는 광고차단 확장프로그램을 확인해주세요.</p>';
+    console.error('window.TossPayments is undefined - CDN 로드 실패');
+    return;
+  }
+  if (!clientKey || clientKey.startsWith('test_ck_placeholder')) {
+    wrapper.innerHTML = '<p style="color:#ff5555;font-size:13px;text-align:center;padding:20px;">❌ 결제 키가 설정되지 않았습니다.<br/>관리자에게 문의해주세요.</p>';
+    console.error('TOSS_CLIENT_KEY가 설정되지 않음. /config.js 확인 필요');
+    return;
+  }
+
+  try {
+    tossPayments = TossPayments(clientKey);
+    widgets = tossPayments.widgets({ customerKey: `user-${Date.now()}` });
+    await widgets.setAmount({ currency: 'KRW', value: amount });
+    wrapper.innerHTML = '';
+    await widgets.renderPaymentMethods({
+      selector: '#payment-widget-wrapper',
+      variantKey: 'DEFAULT',
+    });
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = '결제하기';
+  } catch (e) {
+    console.error('결제 위젯 초기화 오류:', e);
+    wrapper.innerHTML = `<p style="color:#ff5555;font-size:13px;text-align:center;padding:20px;">❌ 결제 수단 로드 오류<br/><span style="color:#888;font-size:11px;">${e.message || e}</span></p>`;
+    widgets = null;
   }
 }
 
 async function confirmPayment() {
   if (!currentOrder) return;
+  if (!widgets) {
+    alert('결제 수단이 아직 준비되지 않았습니다. 잠시 후 다시 시도해주세요.');
+    return;
+  }
+
   const btn = document.getElementById('pay-confirm-btn');
   btn.textContent = '처리 중...'; btn.disabled = true;
 
   try {
-    if (widgets) {
-      await widgets.requestPayment({
-        orderId: currentOrder.orderId,
-        orderName: document.getElementById('modal-plan-name').textContent,
-        successUrl: `${window.location.origin}/success?orderId=${currentOrder.orderId}`,
-        failUrl: `${window.location.origin}/fail`,
-      });
-    } else {
-      alert('토스페이먼츠 SDK가 로드되지 않았습니다.\n.env 파일에 TOSS_CLIENT_KEY를 설정해주세요.');
-    }
+    await widgets.requestPayment({
+      orderId: currentOrder.orderId,
+      orderName: document.getElementById('modal-plan-name').textContent,
+      successUrl: `${window.location.origin}/success?orderId=${currentOrder.orderId}`,
+      failUrl: `${window.location.origin}/fail`,
+    });
   } catch (e) {
+    console.error('결제 요청 오류:', e);
     alert(e.message || '결제 중 오류가 발생했습니다.');
-  } finally {
     btn.textContent = '결제하기'; btn.disabled = false;
   }
 }

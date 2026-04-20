@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const bcrypt = require('bcryptjs');
 const db = require('../db/database');
 const adminMiddleware = require('../middleware/admin');
 
@@ -68,6 +69,23 @@ router.post('/users/:id/plan', adminMiddleware, (req, res) => {
 
   db.users.updatePlan(userId, plan, baseDate.toISOString());
   res.json({ success: true, plan, expiresAt: baseDate.toISOString() });
+});
+
+// 회원 비밀번호 재설정
+router.post('/users/:id/password', adminMiddleware, async (req, res) => {
+  const userId = parseInt(req.params.id);
+  const { newPassword } = req.body;
+
+  if (!newPassword || newPassword.length < 6) {
+    return res.status(400).json({ error: '비밀번호는 6자 이상이어야 합니다.' });
+  }
+
+  const user = db.users.findById(userId);
+  if (!user) return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
+
+  const hashed = await bcrypt.hash(newPassword, 10);
+  db.users.updatePassword(userId, hashed);
+  res.json({ success: true });
 });
 
 // 통계 요약

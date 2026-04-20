@@ -53,6 +53,14 @@ module.exports = {
         save(db);
       }
     },
+    updatePassword(id, password) {
+      const db = load();
+      const user = db.users.find(u => u.id === id);
+      if (user) {
+        user.password = password;
+        save(db);
+      }
+    },
   },
   orders: {
     create({ user_id, order_id, plan, amount }) {
