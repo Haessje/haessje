@@ -6,7 +6,7 @@ const authMiddleware = require('../middleware/auth');
 
 const PLANS = {
   start: { name: '스타트패키지', amount: 199000, duration: 30 },
-  vip: { name: 'VIP서비스', amount: 399000, duration: 30 },
+  vip: { name: 'VIP서비스', amount: 499000, duration: 30 },
 };
 
 const BANK_INFO = {
