@@ -352,6 +352,77 @@ footer { background: #05050a; padding: 60px 0; border-top: 1px solid var(--borde
 .modal-note { text-align: center; color: var(--gray); font-size: 13px; margin-top: 16px; }
 #payment-widget-wrapper { margin-bottom: 20px; min-height: 80px; }
 
+/* ── BANK INFO (무통장입금) ── */
+.bank-info {
+  background: rgba(212,255,0,0.04);
+  border: 1px solid var(--lime-dim);
+  border-radius: 12px;
+  padding: 22px 20px;
+  margin: 8px 0 18px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.bank-info-title {
+  font-size: 14px; font-weight: 700; color: var(--lime);
+  letter-spacing: 0.02em; margin-bottom: 4px;
+}
+.bank-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 10px 0;
+  border-bottom: 1px dashed rgba(255,255,255,0.06);
+}
+.bank-row:last-child { border-bottom: none; }
+.bank-row.highlight {
+  background: rgba(212,255,0,0.06);
+  border: 1px solid var(--lime-dim);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-top: 4px;
+}
+.bank-label {
+  font-size: 13px; color: var(--gray); font-weight: 600;
+  flex-shrink: 0;
+}
+.bank-value {
+  font-size: 15px; font-weight: 700; color: var(--white);
+  text-align: right; word-break: break-all;
+}
+.bank-value.lime { color: var(--lime); font-size: 17px; letter-spacing: 0.02em; }
+.copyable {
+  cursor: pointer;
+  transition: color 0.2s, transform 0.1s;
+  position: relative;
+}
+.copyable::after {
+  content: '📋';
+  margin-left: 6px; font-size: 12px; opacity: 0.6;
+}
+.copyable:hover { color: var(--lime); }
+.copyable:active { transform: scale(0.98); }
+.bank-warning {
+  font-size: 12px; color: var(--gray);
+  line-height: 1.6; padding: 10px 12px;
+  background: rgba(255,215,0,0.06);
+  border-left: 2px solid var(--gold);
+  border-radius: 4px;
+}
+.bank-warning strong { color: var(--gold); }
+
+/* ── TOAST ── */
+#toast {
+  position: fixed; left: 50%; bottom: 40px;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--lime); color: #000;
+  padding: 12px 22px; border-radius: 30px;
+  font-size: 13px; font-weight: 700;
+  box-shadow: 0 8px 24px var(--lime-glow);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.25s, transform 0.25s;
+  z-index: 300;
+}
+#toast.visible {
+  opacity: 1; transform: translateX(-50%) translateY(0);
+}
+
 /* ── SCROLL REVEAL ── */
 .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.7s ease, transform 0.7s ease; }
 .reveal.visible { opacity: 1; transform: none; }

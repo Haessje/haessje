@@ -5,6 +5,7 @@ const db = require('../db/database');
 const adminMiddleware = require('../middleware/admin');
 
 const PLANS = { start: '스타트패키지', vip: 'VIP서비스', svip: 'S-VIP서비스' };
+const PLAN_DURATIONS = { start: 30, vip: 30, svip: 30 };
 
 // 관리자 권한 확인
 router.get('/check', adminMiddleware, (req, res) => {
@@ -69,6 +70,38 @@ router.post('/users/:id/plan', adminMiddleware, (req, res) => {
 
   db.users.updatePlan(userId, plan, baseDate.toISOString());
   res.json({ success: true, plan, expiresAt: baseDate.toISOString() });
+});
+
+// 주문 입금 확인 (수동 승인)
+router.post('/orders/:orderId/confirm', adminMiddleware, (req, res) => {
+  const { orderId } = req.params;
+  const order = db.orders.findAnyByOrderId(orderId);
+  if (!order) return res.status(404).json({ error: '주문을 찾을 수 없습니다.' });
+  if (order.status === 'done') return res.status(409).json({ error: '이미 확인된 주문입니다.' });
+
+  const days = PLAN_DURATIONS[order.plan] || 30;
+  const user = db.users.findById(order.user_id);
+  if (!user) return res.status(404).json({ error: '회원을 찾을 수 없습니다.' });
+
+  const baseDate = user.plan_expires_at && new Date(user.plan_expires_at) > new Date()
+    ? new Date(user.plan_expires_at)
+    : new Date();
+  baseDate.setDate(baseDate.getDate() + days);
+
+  db.orders.updateStatus(orderId, 'done', 'manual-deposit');
+  db.users.updatePlan(order.user_id, order.plan, baseDate.toISOString());
+
+  res.json({ success: true, plan: order.plan, expiresAt: baseDate.toISOString() });
+});
+
+// 주문 취소
+router.post('/orders/:orderId/cancel', adminMiddleware, (req, res) => {
+  const { orderId } = req.params;
+  const order = db.orders.findAnyByOrderId(orderId);
+  if (!order) return res.status(404).json({ error: '주문을 찾을 수 없습니다.' });
+
+  db.orders.updateStatus(orderId, 'cancelled', null);
+  res.json({ success: true });
 });
 
 // 회원 비밀번호 재설정

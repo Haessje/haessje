@@ -49,6 +49,10 @@
     .btn-remove { background: rgba(255,85,85,0.1); color: #ff5555; border: 1px solid rgba(255,85,85,0.4); }
     .btn-assign { background: rgba(255,255,255,0.06); color: var(--white); border: 1px solid var(--border); }
     .btn-password { background: rgba(100,150,255,0.1); color: #6496ff; border: 1px solid rgba(100,150,255,0.4); }
+    .btn-confirm { background: var(--lime); color: #000; border: none; }
+    .btn-cancel { background: rgba(255,85,85,0.1); color: #ff5555; border: 1px solid rgba(255,85,85,0.4); }
+
+    .badge-cancelled { background: rgba(255,85,85,0.15); color: #ff7777; }
 
     .empty { text-align: center; color: var(--gray); padding: 48px; }
 
@@ -121,11 +125,11 @@
     <table>
       <thead>
         <tr>
-          <th>주문 ID</th><th>회원</th><th>플랜</th><th>금액</th><th>상태</th><th>주문일</th>
+          <th>주문 ID</th><th>회원</th><th>플랜</th><th>금액</th><th>상태</th><th>주문일</th><th style="width:200px;">작업</th>
         </tr>
       </thead>
       <tbody id="orders-body">
-        <tr><td colspan="6" class="empty">로딩 중...</td></tr>
+        <tr><td colspan="7" class="empty">로딩 중...</td></tr>
       </tbody>
     </table>
   </div>
@@ -205,20 +209,58 @@ async function loadOrders() {
   const body = document.getElementById('orders-body');
 
   if (orders.length === 0) {
-    body.innerHTML = '<tr><td colspan="6" class="empty">주문이 없습니다</td></tr>';
+    body.innerHTML = '<tr><td colspan="7" class="empty">주문이 없습니다</td></tr>';
     return;
   }
 
-  body.innerHTML = orders.map(o => `
-    <tr>
-      <td style="font-family:monospace; font-size:11px; color:var(--gray);">${o.order_id}</td>
-      <td>${o.user_name || '-'}<br/><span style="color:var(--gray); font-size:11px;">${o.user_email || ''}</span></td>
-      <td><span class="badge badge-plan-${o.plan}">${PLAN_NAMES[o.plan]}</span></td>
-      <td>${fmtWon(o.amount)}</td>
-      <td><span class="badge badge-${o.status}">${o.status === 'done' ? '결제완료' : '대기'}</span></td>
-      <td>${new Date(o.created_at).toLocaleString('ko-KR')}</td>
-    </tr>
-  `).join('');
+  const statusLabel = (s) => s === 'done' ? '입금완료' : s === 'cancelled' ? '취소됨' : '입금대기';
+
+  body.innerHTML = orders.map(o => {
+    const actions = o.status === 'pending'
+      ? `<div class="row-actions">
+           <button class="btn-sm btn-confirm" onclick="confirmOrder('${o.order_id}', '${o.user_name || ''}')">입금 확인</button>
+           <button class="btn-sm btn-cancel" onclick="cancelOrder('${o.order_id}')">취소</button>
+         </div>`
+      : `<span style="color:var(--gray); font-size:12px;">-</span>`;
+
+    return `
+      <tr>
+        <td style="font-family:monospace; font-size:12px; color:var(--lime);">${o.order_id}</td>
+        <td>${o.user_name || '-'}<br/><span style="color:var(--gray); font-size:11px;">${o.user_email || ''}</span></td>
+        <td><span class="badge badge-plan-${o.plan}">${PLAN_NAMES[o.plan]}</span></td>
+        <td>${fmtWon(o.amount)}</td>
+        <td><span class="badge badge-${o.status}">${statusLabel(o.status)}</span></td>
+        <td>${new Date(o.created_at).toLocaleString('ko-KR')}</td>
+        <td>${actions}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+async function confirmOrder(orderId, userName) {
+  if (!confirm(`주문 ${orderId} (${userName})의 입금을 확인하고 플랜을 활성화하시겠습니까?`)) return;
+
+  const res = await fetch(`/api/admin/orders/${orderId}/confirm`, {
+    method: 'POST', credentials: 'include',
+  });
+  const data = await res.json();
+  if (res.ok) {
+    alert(`플랜이 활성화되었습니다.\n만료일: ${new Date(data.expiresAt).toLocaleDateString('ko-KR')}`);
+    loadOrders(); loadUsers(); loadStats();
+  } else {
+    alert(data.error || '오류');
+  }
+}
+
+async function cancelOrder(orderId) {
+  if (!confirm(`주문 ${orderId}를 취소하시겠습니까?`)) return;
+
+  const res = await fetch(`/api/admin/orders/${orderId}/cancel`, {
+    method: 'POST', credentials: 'include',
+  });
+  const data = await res.json();
+  if (res.ok) { alert('취소되었습니다.'); loadOrders(); }
+  else alert(data.error || '오류');
 }
 
 async function assignPlan(userId, userName) {

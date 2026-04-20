@@ -338,18 +338,44 @@
   </div>
 </div>
 
-<!-- ── 결제 모달 ── -->
+<!-- ── 무통장입금 안내 모달 ── -->
 <div id="pay-modal" class="modal hidden">
   <div class="modal-overlay" onclick="closeModal()"></div>
   <div class="modal-box">
     <button class="modal-close" onclick="closeModal()">✕</button>
     <h3 id="modal-plan-name">스타트패키지</h3>
     <p class="modal-price" id="modal-price">₩99,000/월</p>
-    <div id="payment-widget-wrapper"></div>
-    <button class="btn-lime btn-full" id="pay-confirm-btn" onclick="confirmPayment()">
-      결제하기
-    </button>
-    <p class="modal-note">토스페이먼츠 안전 결제 · 언제든지 해지 가능</p>
+
+    <div class="bank-info">
+      <div class="bank-info-title">💳 아래 계좌로 입금해 주세요</div>
+      <div class="bank-row">
+        <span class="bank-label">은행</span>
+        <span class="bank-value" id="bank-name">-</span>
+      </div>
+      <div class="bank-row">
+        <span class="bank-label">계좌번호</span>
+        <span class="bank-value copyable" id="bank-account" onclick="copyText(this.textContent)">-</span>
+      </div>
+      <div class="bank-row">
+        <span class="bank-label">예금주</span>
+        <span class="bank-value" id="bank-holder">-</span>
+      </div>
+      <div class="bank-row highlight">
+        <span class="bank-label">입금 금액</span>
+        <span class="bank-value lime" id="bank-amount">-</span>
+      </div>
+      <div class="bank-row highlight">
+        <span class="bank-label">입금자명 (필수)</span>
+        <span class="bank-value lime copyable" id="bank-order-id" onclick="copyText(this.textContent.replace(' 📋',''))">-</span>
+      </div>
+      <p class="bank-warning">
+        ⚠️ 입금자명을 <strong>주문번호</strong>로 입력해 주세요.<br/>
+        다를 경우 확인이 지연될 수 있습니다.
+      </p>
+    </div>
+
+    <button class="btn-lime btn-full" onclick="closeModal()">주문 완료</button>
+    <p class="modal-note">입금 확인 후 1영업일 이내 가입 이메일로 안내드립니다</p>
   </div>
 </div>
 
@@ -370,8 +396,6 @@
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-<script src="https://js.tosspayments.com/v2/standard"></script>
-<script src="/config.js"></script>
 <script src="/js/main.js"></script>
 </body>
 </html>

@@ -82,6 +82,9 @@ module.exports = {
     findByOrderId(order_id, user_id) {
       return load().orders.find(o => o.order_id === order_id && o.user_id === user_id);
     },
+    findAnyByOrderId(order_id) {
+      return load().orders.find(o => o.order_id === order_id);
+    },
     findByUserId(user_id) {
       return load().orders
         .filter(o => o.user_id === user_id)
