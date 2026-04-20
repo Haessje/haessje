@@ -5,9 +5,8 @@ const db = require('../db/database');
 const authMiddleware = require('../middleware/auth');
 
 const PLANS = {
-  start: { name: '스타트패키지', amount: 99000, duration: 30 },
-  vip: { name: 'VIP서비스', amount: 199000, duration: 30 },
-  svip: { name: 'S-VIP서비스', amount: 399000, duration: 30 },
+  start: { name: '스타트패키지', amount: 199000, duration: 30 },
+  vip: { name: 'VIP서비스', amount: 399000, duration: 30 },
 };
 
 const BANK_INFO = {
@@ -18,19 +17,29 @@ const BANK_INFO = {
 
 // 주문 생성 (무통장입금)
 router.post('/create-order', authMiddleware, (req, res) => {
-  const { plan } = req.body;
+  const { plan, depositor } = req.body;
   if (!PLANS[plan]) return res.status(400).json({ error: '유효하지 않은 플랜입니다.' });
 
-  // 짧은 주문번호 (입금자명 용도, 9자): HSJ + 6자 hex
+  const depName = (depositor || '').trim();
+  if (!depName) return res.status(400).json({ error: '입금자명을 입력해 주세요.' });
+
+  // 내부 주문 ID (관리자용 식별자)
   const orderId = `HSJ${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
   const { amount, name } = PLANS[plan];
 
-  db.orders.create({ user_id: req.user.id, order_id: orderId, plan, amount });
+  db.orders.create({
+    user_id: req.user.id,
+    order_id: orderId,
+    plan,
+    amount,
+    depositor: depName,
+  });
 
   res.json({
     orderId,
     amount,
     planName: name,
+    depositor: depName,
     bank: BANK_INFO,
   });
 });
@@ -41,6 +50,7 @@ router.get('/orders', authMiddleware, (req, res) => {
     order_id: o.order_id,
     plan: o.plan,
     amount: o.amount,
+    depositor: o.depositor || '',
     status: o.status,
     created_at: o.created_at,
   }));

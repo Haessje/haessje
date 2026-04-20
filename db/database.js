@@ -63,7 +63,7 @@ module.exports = {
     },
   },
   orders: {
-    create({ user_id, order_id, plan, amount }) {
+    create({ user_id, order_id, plan, amount, depositor }) {
       const db = load();
       const order = {
         id: db.nextOrderId++,
@@ -71,6 +71,7 @@ module.exports = {
         order_id,
         plan,
         amount,
+        depositor: depositor || '',
         status: 'pending',
         payment_key: null,
         created_at: new Date().toISOString(),

@@ -125,18 +125,18 @@
     <table>
       <thead>
         <tr>
-          <th>주문 ID</th><th>회원</th><th>플랜</th><th>금액</th><th>상태</th><th>주문일</th><th style="width:200px;">작업</th>
+          <th>주문 ID</th><th>회원</th><th>입금자명</th><th>플랜</th><th>금액</th><th>상태</th><th>주문일</th><th style="width:200px;">작업</th>
         </tr>
       </thead>
       <tbody id="orders-body">
-        <tr><td colspan="7" class="empty">로딩 중...</td></tr>
+        <tr><td colspan="8" class="empty">로딩 중...</td></tr>
       </tbody>
     </table>
   </div>
 </div>
 
 <script>
-const PLAN_NAMES = { start: '스타트', vip: 'VIP', svip: 'S-VIP' };
+const PLAN_NAMES = { start: '스타트', vip: 'VIP' };
 
 function fmtDate(iso) { return iso ? new Date(iso).toLocaleDateString('ko-KR') : '-'; }
 function fmtWon(n) { return '₩' + Number(n).toLocaleString(); }
@@ -209,7 +209,7 @@ async function loadOrders() {
   const body = document.getElementById('orders-body');
 
   if (orders.length === 0) {
-    body.innerHTML = '<tr><td colspan="7" class="empty">주문이 없습니다</td></tr>';
+    body.innerHTML = '<tr><td colspan="8" class="empty">주문이 없습니다</td></tr>';
     return;
   }
 
@@ -223,10 +223,15 @@ async function loadOrders() {
          </div>`
       : `<span style="color:var(--gray); font-size:12px;">-</span>`;
 
+    const depositor = o.depositor
+      ? `<strong style="color:var(--lime);">${o.depositor}</strong>`
+      : `<span style="color:var(--gray); font-size:12px;">-</span>`;
+
     return `
       <tr>
-        <td style="font-family:monospace; font-size:12px; color:var(--lime);">${o.order_id}</td>
+        <td style="font-family:monospace; font-size:11px; color:var(--gray);">${o.order_id}</td>
         <td>${o.user_name || '-'}<br/><span style="color:var(--gray); font-size:11px;">${o.user_email || ''}</span></td>
+        <td>${depositor}</td>
         <td><span class="badge badge-plan-${o.plan}">${PLAN_NAMES[o.plan]}</span></td>
         <td>${fmtWon(o.amount)}</td>
         <td><span class="badge badge-${o.status}">${statusLabel(o.status)}</span></td>
@@ -264,8 +269,8 @@ async function cancelOrder(orderId) {
 }
 
 async function assignPlan(userId, userName) {
-  const plan = prompt(`${userName}님께 부여할 플랜을 선택하세요:\n\nstart / vip / svip`);
-  if (!plan || !['start','vip','svip'].includes(plan.trim())) return;
+  const plan = prompt(`${userName}님께 부여할 플랜을 선택하세요:\n\nstart / vip`);
+  if (!plan || !['start','vip'].includes(plan.trim())) return;
   const days = prompt('부여 기간 (일):', '30');
   if (!days) return;
 

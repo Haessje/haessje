@@ -4,8 +4,8 @@ const bcrypt = require('bcryptjs');
 const db = require('../db/database');
 const adminMiddleware = require('../middleware/admin');
 
-const PLANS = { start: '스타트패키지', vip: 'VIP서비스', svip: 'S-VIP서비스' };
-const PLAN_DURATIONS = { start: 30, vip: 30, svip: 30 };
+const PLANS = { start: '스타트패키지', vip: 'VIP서비스' };
+const PLAN_DURATIONS = { start: 30, vip: 30 };
 
 // 관리자 권한 확인
 router.get('/check', adminMiddleware, (req, res) => {

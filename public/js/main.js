@@ -96,7 +96,8 @@ checkboxes.forEach(cb => {
 // 패키지 카드 플립
 document.querySelectorAll('.pkg-card').forEach(card => {
   card.addEventListener('click', e => {
-    if (e.target.classList.contains('btn-buy') || e.target.closest('.btn-buy') ||
+    if (e.target.closest('a[href]') ||
+        e.target.classList.contains('btn-buy') || e.target.closest('.btn-buy') ||
         e.target.classList.contains('btn-outline') || e.target.closest('.btn-outline')) return;
     card.classList.toggle('flipped');
   });
@@ -125,11 +126,21 @@ document.querySelectorAll('.acc-q').forEach(btn => {
 let currentOrder = null;
 
 async function startPurchase(plan, amount, planName) {
-  // 로그인 체크
+  // 로그인 체크 + 사용자 정보
+  let userInfo = null;
   try {
     const me = await fetch('/api/auth/me', { credentials: 'include' });
     if (!me.ok) { showAuthModal(); return; }
+    try { userInfo = await me.json(); } catch {}
   } catch { showAuthModal(); return; }
+
+  // 입금자명 입력 (본인 이름 기본값)
+  const defaultName = userInfo?.user?.name || '';
+  const depositor = prompt(
+    '입금자명(통장에 찍힐 이름)을 입력해 주세요.\n\n* 입력한 이름 그대로 입금하셔야 확인이 빠릅니다.',
+    defaultName
+  );
+  if (!depositor || !depositor.trim()) return;
 
   // 주문 생성
   let orderData;
@@ -137,7 +148,7 @@ async function startPurchase(plan, amount, planName) {
     const res = await fetch('/api/payment/create-order', {
       method: 'POST', credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ plan }),
+      body: JSON.stringify({ plan, depositor: depositor.trim() }),
     });
     orderData = await res.json();
     if (!res.ok) { alert(orderData.error || '주문 생성 실패'); return; }
@@ -151,7 +162,7 @@ async function startPurchase(plan, amount, planName) {
   document.getElementById('bank-account').textContent = orderData.bank.account;
   document.getElementById('bank-holder').textContent = orderData.bank.holder;
   document.getElementById('bank-amount').textContent = `${amount.toLocaleString()}원`;
-  document.getElementById('bank-order-id').textContent = orderData.orderId;
+  document.getElementById('bank-depositor').textContent = orderData.depositor;
 
   document.getElementById('pay-modal').classList.remove('hidden');
 }
