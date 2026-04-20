@@ -41,21 +41,13 @@
 // GSAP 애니메이션
 gsap.registerPlugin(ScrollTrigger);
 
-// Hero 애니메이션
-gsap.timeline({ delay: 0.3 })
-  .to('.hero-sub', { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' })
-  .to('.hero-title .line span', {
-    y: 0, duration: 0.9, stagger: 0.15, ease: 'power3.out',
-  }, '-=0.4')
-  .to('.hero-desc', { opacity: 1, duration: 0.7, ease: 'power2.out' }, '-=0.3')
-  .to('.hero-cta', { opacity: 1, duration: 0.5 }, '-=0.2');
-
-// Hero 타이틀 내 span 초기 설정 — innerHTML 사용으로 <em> 태그 보존
-document.querySelectorAll('.hero-title .line').forEach(line => {
-  const html = line.innerHTML;
-  line.innerHTML = `<span>${html}</span>`;
-});
-gsap.set('.hero-title .line span', { y: '100%' });
+// Hero 애니메이션 — 타이틀은 opacity 페이드인으로 단순화 (슬라이드 방식 제거)
+gsap.set('.hero-title', { opacity: 0, y: 20 });
+gsap.timeline({ delay: 0.2 })
+  .to('.hero-sub',   { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' })
+  .to('.hero-title', { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' }, '-=0.3')
+  .to('.hero-desc',  { opacity: 1, duration: 0.6, ease: 'power2.out' }, '-=0.3')
+  .to('.hero-cta',   { opacity: 1, duration: 0.5 }, '-=0.2');
 
 // 스크롤 reveal
 document.querySelectorAll('.pkg-card, .feature-card, .timeline-item, .acc-item').forEach(el => {
