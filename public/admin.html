@@ -100,6 +100,8 @@
     .step-btn:hover { background: var(--lime-dim); color: var(--lime); }
     .amodal-actions { display: flex; gap: 10px; }
 
+    #filter-year option, #filter-month option { color: #000; background: #fff; }
+
     @media (max-width: 900px) {
       .stats-row { grid-template-columns: repeat(2, 1fr); }
       table { font-size: 12px; }
@@ -129,7 +131,7 @@
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
     <span style="font-size:12px;color:var(--gray);font-weight:700;letter-spacing:0.08em;">매출 기간</span>
     <select id="filter-year" onchange="loadStats()" style="background:var(--card-bg);border:1px solid var(--border);color:var(--white);padding:6px 12px;border-radius:6px;font-size:13px;cursor:pointer;">
-      <option value="">전체</option>
+      <option value="" style="color:#000;background:#fff;">전체</option>
     </select>
     <select id="filter-month" onchange="loadStats()" style="background:var(--card-bg);border:1px solid var(--border);color:var(--white);padding:6px 12px;border-radius:6px;font-size:13px;cursor:pointer;">
       <option value="">전체 월</option>
@@ -224,6 +226,7 @@ function initYearFilter() {
   for (let y = cur; y >= 2025; y--) {
     const opt = document.createElement('option');
     opt.value = y; opt.textContent = `${y}년`;
+    opt.style.cssText = 'color:#000;background:#fff;';
     sel.appendChild(opt);
   }
   sel.value = cur; // 기본값: 현재 연도
