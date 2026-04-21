@@ -2,13 +2,18 @@ const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
   host: 'smtp.naver.com',
-  port: 465,
-  secure: true,
+  port: 587,
+  secure: false,
   auth: {
     user: process.env.NAVER_EMAIL,
     pass: process.env.NAVER_PASSWORD,
   },
+  tls: { rejectUnauthorized: false },
 });
+
+// 시작 시 환경변수 확인
+console.log('[Mailer] NAVER_EMAIL:', process.env.NAVER_EMAIL ? '설정됨' : '없음');
+console.log('[Mailer] NAVER_PASSWORD:', process.env.NAVER_PASSWORD ? '설정됨' : '없음');
 
 const TEMPLATES = {
   start: (userName) => ({
