@@ -325,6 +325,8 @@
       <button onclick="openTerms()" style="background:none;border:none;color:var(--gray);font-size:13px;cursor:pointer;text-decoration:underline;padding:0;">이용약관</button>
       &nbsp;·&nbsp;
       <button onclick="openCompliance()" style="background:none;border:none;color:var(--gray);font-size:13px;cursor:pointer;text-decoration:underline;padding:0;">준법서약서</button>
+      &nbsp;·&nbsp;
+      <button onclick="openEthics()" style="background:none;border:none;color:var(--gray);font-size:13px;cursor:pointer;text-decoration:underline;padding:0;">정보제공윤리강령</button>
     </p>
   </div>
 </footer>
@@ -617,6 +619,29 @@
   </div>
 </div>
 
+<!-- ── 정보제공윤리강령 모달 ── -->
+<div id="ethics-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(4px);z-index:999;overflow-y:auto;padding:40px 16px;">
+  <div style="max-width:720px;margin:0 auto;background:#12121a;border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:40px 32px;position:relative;">
+    <button onclick="closeEthics()" style="position:absolute;top:20px;right:24px;background:none;border:none;color:#888;font-size:28px;cursor:pointer;line-height:1;">×</button>
+    <h2 style="font-size:20px;font-weight:900;margin-bottom:28px;color:#fff;">정보제공윤리강령</h2>
+    <div style="color:#ccc;font-size:14px;line-height:2;">
+      <ol style="padding-left:20px;display:flex;flex-direction:column;gap:12px;">
+        <li>본인은 오직 사실에 근거한 전문적인 정보만을 제공하겠습니다.</li>
+        <li>본인은 자기 또는 타인의 계좌를 통해 매매, 위탁매매, 일임매매를 하지 않습니다.</li>
+        <li>본인은 선행매매(본인 또는 제3자가 미리 특정 종목을 매수한 후 타인에게 매수 추천하는 행위, 타인에게 매수추천 후 본인 또는 제3자가 매도하는 행위)나 미공개 정보를 이용한 주식투자를 하지 않습니다.</li>
+        <li>본인은 시세가 자기 또는 타인의 시장조작(소위 작전)에 의하여 변동한다는 말을 유포하지 않습니다.</li>
+        <li>본인은 고의로 자기 또는 타인의 부당한 이득을 위하여 확인되지 않은 사실(소위 허위루머)을 유포하지 않습니다.</li>
+        <li>본인은 정보제공 중 취득한 고객정보를 부정 사용하지 않습니다. 고객정보 및 컨텐츠 이용정보는 법상 허용된 경우 이외에는 누구에게도 제공하지 않습니다.</li>
+        <li>게시물의 저작권자로서 게시물의 게시와 관련한 법적 책임은 본인이 부담합니다.</li>
+        <li>본인은 서비스가 제공되는 사이트의 건전한 증권 문화 확립이념에 동의하며, 증권관련 법규 및 증권 당국의 정책을 준수하고 고객들의 건전한 증권 투자 문화 확립을 위해 노력하겠습니다.</li>
+      </ol>
+    </div>
+    <div style="text-align:center;margin-top:32px;">
+      <button onclick="closeEthics()" class="btn-lime" style="padding:12px 40px;">닫기</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── 준법서약서 모달 ── -->
 <div id="compliance-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(4px);z-index:999;overflow-y:auto;padding:40px 16px;">
   <div style="max-width:720px;margin:0 auto;background:#12121a;border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:40px 32px;position:relative;">
@@ -653,6 +678,14 @@ function closeTerms() {
 document.getElementById('terms-overlay').addEventListener('click', function(e) {
   if (e.target === this) closeTerms();
 });
+function openEthics() {
+  document.getElementById('ethics-overlay').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+function closeEthics() {
+  document.getElementById('ethics-overlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
 function openCompliance() {
   document.getElementById('compliance-overlay').style.display = 'block';
   document.body.style.overflow = 'hidden';
@@ -663,6 +696,9 @@ function closeCompliance() {
 }
 document.getElementById('compliance-overlay').addEventListener('click', function(e) {
   if (e.target === this) closeCompliance();
+});
+document.getElementById('ethics-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeEthics();
 });
 </script>
 
