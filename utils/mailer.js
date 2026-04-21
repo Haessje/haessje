@@ -1,19 +1,12 @@
 const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
-  host: 'smtp.naver.com',
-  port: 587,
-  secure: false,
+  service: 'gmail',
   auth: {
-    user: process.env.NAVER_EMAIL,
-    pass: process.env.NAVER_PASSWORD,
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_PASSWORD,
   },
-  tls: { rejectUnauthorized: false },
 });
-
-// 시작 시 환경변수 확인
-console.log('[Mailer] NAVER_EMAIL:', process.env.NAVER_EMAIL ? '설정됨' : '없음');
-console.log('[Mailer] NAVER_PASSWORD:', process.env.NAVER_PASSWORD ? '설정됨' : '없음');
 
 const TEMPLATES = {
   start: (userName) => ({
@@ -153,7 +146,7 @@ async function sendPlanEmail(toEmail, userName, plan) {
   if (!template) return;
 
   await transporter.sendMail({
-    from: `"했제" <${process.env.NAVER_EMAIL}>`,
+    from: `"했제" <${process.env.GMAIL_USER}>`,
     to: toEmail,
     subject: template.subject,
     html: template.html,
