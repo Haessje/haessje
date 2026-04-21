@@ -1,104 +1,113 @@
-const fs = require('fs');
-const path = require('path');
+const { Pool } = require('pg');
 
-const DB_DIR = process.env.DATA_DIR || __dirname;
-if (!fs.existsSync(DB_DIR)) fs.mkdirSync(DB_DIR, { recursive: true });
-const DB_PATH = path.join(DB_DIR, 'haessje.json');
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false,
+});
 
-function load() {
-  if (!fs.existsSync(DB_PATH)) {
-    return { users: [], orders: [], nextUserId: 1, nextOrderId: 1 };
-  }
-  try {
-    return JSON.parse(fs.readFileSync(DB_PATH, 'utf-8'));
-  } catch {
-    return { users: [], orders: [], nextUserId: 1, nextOrderId: 1 };
-  }
+// 테이블 초기화 (서버 시작 시 자동 실행)
+async function init() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id SERIAL PRIMARY KEY,
+      email TEXT UNIQUE NOT NULL,
+      password TEXT NOT NULL,
+      name TEXT NOT NULL,
+      phone TEXT DEFAULT '',
+      plan TEXT DEFAULT NULL,
+      plan_expires_at TIMESTAMPTZ DEFAULT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+  `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS orders (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      order_id TEXT UNIQUE NOT NULL,
+      plan TEXT NOT NULL,
+      amount INTEGER NOT NULL,
+      depositor TEXT DEFAULT '',
+      status TEXT DEFAULT 'pending',
+      payment_key TEXT DEFAULT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+  `);
 }
 
-function save(data) {
-  fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), 'utf-8');
-}
+init().catch(err => console.error('DB init error:', err));
 
 module.exports = {
   users: {
-    findByEmail(email) {
-      return load().users.find(u => u.email === email);
+    async findByEmail(email) {
+      const { rows } = await pool.query('SELECT * FROM users WHERE email=$1', [email]);
+      return rows[0] || null;
     },
-    findById(id) {
-      return load().users.find(u => u.id === id);
+    async findById(id) {
+      const { rows } = await pool.query('SELECT * FROM users WHERE id=$1', [id]);
+      return rows[0] || null;
     },
-    create({ email, password, name, phone }) {
-      const db = load();
-      const user = {
-        id: db.nextUserId++,
-        email,
-        password,
-        name,
-        phone: phone || '',
-        plan: null,
-        plan_expires_at: null,
-        created_at: new Date().toISOString(),
-      };
-      db.users.push(user);
-      save(db);
-      return user;
+    async create({ email, password, name, phone }) {
+      const { rows } = await pool.query(
+        `INSERT INTO users (email, password, name, phone)
+         VALUES ($1,$2,$3,$4) RETURNING *`,
+        [email, password, name, phone || '']
+      );
+      return rows[0];
     },
-    updatePlan(id, plan, plan_expires_at) {
-      const db = load();
-      const user = db.users.find(u => u.id === id);
-      if (user) {
-        user.plan = plan;
-        user.plan_expires_at = plan_expires_at;
-        save(db);
-      }
+    async updatePlan(id, plan, plan_expires_at) {
+      await pool.query(
+        'UPDATE users SET plan=$1, plan_expires_at=$2 WHERE id=$3',
+        [plan, plan_expires_at, id]
+      );
     },
-    updatePassword(id, password) {
-      const db = load();
-      const user = db.users.find(u => u.id === id);
-      if (user) {
-        user.password = password;
-        save(db);
-      }
+    async updatePassword(id, password) {
+      await pool.query('UPDATE users SET password=$1 WHERE id=$2', [password, id]);
+    },
+    async findAll() {
+      const { rows } = await pool.query('SELECT * FROM users ORDER BY created_at DESC');
+      return rows;
     },
   },
+
   orders: {
-    create({ user_id, order_id, plan, amount, depositor }) {
-      const db = load();
-      const order = {
-        id: db.nextOrderId++,
-        user_id,
-        order_id,
-        plan,
-        amount,
-        depositor: depositor || '',
-        status: 'pending',
-        payment_key: null,
-        created_at: new Date().toISOString(),
-      };
-      db.orders.push(order);
-      save(db);
-      return order;
+    async create({ user_id, order_id, plan, amount, depositor }) {
+      const { rows } = await pool.query(
+        `INSERT INTO orders (user_id, order_id, plan, amount, depositor)
+         VALUES ($1,$2,$3,$4,$5) RETURNING *`,
+        [user_id, order_id, plan, amount, depositor || '']
+      );
+      return rows[0];
     },
-    findByOrderId(order_id, user_id) {
-      return load().orders.find(o => o.order_id === order_id && o.user_id === user_id);
+    async findByOrderId(order_id, user_id) {
+      const { rows } = await pool.query(
+        'SELECT * FROM orders WHERE order_id=$1 AND user_id=$2',
+        [order_id, user_id]
+      );
+      return rows[0] || null;
     },
-    findAnyByOrderId(order_id) {
-      return load().orders.find(o => o.order_id === order_id);
+    async findAnyByOrderId(order_id) {
+      const { rows } = await pool.query(
+        'SELECT * FROM orders WHERE order_id=$1',
+        [order_id]
+      );
+      return rows[0] || null;
     },
-    findByUserId(user_id) {
-      return load().orders
-        .filter(o => o.user_id === user_id)
-        .sort((a, b) => b.created_at.localeCompare(a.created_at));
+    async findByUserId(user_id) {
+      const { rows } = await pool.query(
+        'SELECT * FROM orders WHERE user_id=$1 ORDER BY created_at DESC',
+        [user_id]
+      );
+      return rows;
     },
-    updateStatus(order_id, status, payment_key) {
-      const db = load();
-      const order = db.orders.find(o => o.order_id === order_id);
-      if (order) {
-        order.status = status;
-        order.payment_key = payment_key;
-        save(db);
-      }
+    async findAll() {
+      const { rows } = await pool.query('SELECT * FROM orders ORDER BY created_at DESC');
+      return rows;
+    },
+    async updateStatus(order_id, status, payment_key) {
+      await pool.query(
+        'UPDATE orders SET status=$1, payment_key=$2 WHERE order_id=$3',
+        [status, payment_key, order_id]
+      );
     },
   },
 };
