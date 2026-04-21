@@ -323,6 +323,8 @@
     <p class="footer-disclaimer">본 서비스는 투자 참고용이며 투자 손실에 대한 법적 책임을 지지 않습니다.</p>
     <p style="margin-top:10px;">
       <button onclick="openTerms()" style="background:none;border:none;color:var(--gray);font-size:13px;cursor:pointer;text-decoration:underline;padding:0;">이용약관</button>
+      &nbsp;·&nbsp;
+      <button onclick="openCompliance()" style="background:none;border:none;color:var(--gray);font-size:13px;cursor:pointer;text-decoration:underline;padding:0;">준법서약서</button>
     </p>
   </div>
 </footer>
@@ -615,6 +617,30 @@
   </div>
 </div>
 
+<!-- ── 준법서약서 모달 ── -->
+<div id="compliance-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(4px);z-index:999;overflow-y:auto;padding:40px 16px;">
+  <div style="max-width:720px;margin:0 auto;background:#12121a;border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:40px 32px;position:relative;">
+    <button onclick="closeCompliance()" style="position:absolute;top:20px;right:24px;background:none;border:none;color:#888;font-size:28px;cursor:pointer;line-height:1;">×</button>
+    <h2 style="font-size:20px;font-weight:900;margin-bottom:28px;color:#fff;">준법서약서</h2>
+    <div style="color:#ccc;font-size:14px;line-height:2;">
+      <p style="margin-bottom:20px;">본인은 직무를 수행함에 있어 회사의 내부통제기준에서 정하는 바에 따라 자본시장과 금융투자업에 관한 법률 및 기타 관련법규를 준수하고 회원들의 권익을 보호하며 선량한 풍속 기타 사회질서에 위배 되지 않는 건전한 증권문화를 선도해 나갈 것을 서약합니다.</p>
+      <ol style="padding-left:20px;margin-bottom:20px;display:flex;flex-direction:column;gap:10px;">
+        <li>나는 본 내부통제기준과 관련 법규를 준수하고 직무를 수행함에 있어 신의성실로 임하겠습니다.</li>
+        <li>나는 주가조작 및 불공정거래 행위를 하지 않겠습니다.</li>
+        <li>나는 선행매매나 미공개 정보를 이용한 주식투자를 하지 않겠습니다.</li>
+        <li>나는 허위사실 유포를 하지 않고 오직 사실에 근거한 전문적인 정보만을 제공하겠습니다.</li>
+        <li>나는 타인의 계좌를 위탁 매매하거나 일임 매매하지 않겠습니다.</li>
+        <li>나는 회사의 경영에 위기를 초래할 수 있는 행위에 참여하거나 방조하지 않겠습니다.</li>
+      </ol>
+      <p style="margin-bottom:28px;">본인은 직무를 수행하면서 법규를 위반하거나 고객이익과 회사재산을 침해하여 준법서약을 위약한 경우에는 관련규정에 따른 어떠한 불이익도 감수하겠습니다.</p>
+      <p style="color:#555;font-size:13px;border-top:1px solid rgba(255,255,255,0.06);padding-top:20px;">[개정 이력]<br/>1차 시행 : 2025.04.28</p>
+    </div>
+    <div style="text-align:center;margin-top:32px;">
+      <button onclick="closeCompliance()" class="btn-lime" style="padding:12px 40px;">닫기</button>
+    </div>
+  </div>
+</div>
+
 <script>
 function openTerms() {
   document.getElementById('terms-overlay').style.display = 'block';
@@ -626,6 +652,17 @@ function closeTerms() {
 }
 document.getElementById('terms-overlay').addEventListener('click', function(e) {
   if (e.target === this) closeTerms();
+});
+function openCompliance() {
+  document.getElementById('compliance-overlay').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+function closeCompliance() {
+  document.getElementById('compliance-overlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+document.getElementById('compliance-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeCompliance();
 });
 </script>
 
