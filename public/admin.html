@@ -56,6 +56,47 @@
 
     .empty { text-align: center; color: var(--gray); padding: 48px; }
 
+    /* 플랜 부여 모달 */
+    .amodal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(4px); z-index: 200;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .amodal-box {
+      background: #12121a; border: 1px solid var(--border);
+      border-radius: 16px; padding: 32px 28px;
+      width: 100%; max-width: 420px;
+    }
+    .amodal-box h3 { font-size: 18px; font-weight: 800; margin-bottom: 6px; }
+    .amodal-box .amodal-sub { color: var(--gray); font-size: 13px; margin-bottom: 24px; }
+    .amodal-label { font-size: 12px; color: var(--gray); letter-spacing: 0.08em; font-weight: 700; margin-bottom: 10px; }
+    .plan-btns { display: flex; gap: 10px; margin-bottom: 24px; }
+    .plan-btn {
+      flex: 1; padding: 14px; border-radius: 8px; cursor: pointer;
+      border: 2px solid var(--border); background: var(--card-bg);
+      color: var(--white); font-size: 14px; font-weight: 700;
+      transition: all 0.2s;
+    }
+    .plan-btn:hover { border-color: var(--lime); }
+    .plan-btn.selected { border-color: var(--lime); background: var(--lime-dim); color: var(--lime); }
+    .plan-btn.vip-btn.selected { border-color: var(--gold); background: rgba(255,215,0,0.1); color: var(--gold); }
+    .days-row { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
+    .days-input {
+      width: 90px; padding: 10px 14px; border-radius: 8px;
+      border: 1px solid var(--border); background: var(--card-bg);
+      color: var(--white); font-size: 16px; font-weight: 700; text-align: center;
+    }
+    .days-input:focus { outline: none; border-color: var(--lime); }
+    .days-stepper { display: flex; flex-direction: column; gap: 4px; }
+    .step-btn {
+      width: 28px; height: 22px; border-radius: 4px; border: 1px solid var(--border);
+      background: var(--card-bg); color: var(--white); cursor: pointer;
+      font-size: 14px; display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s;
+    }
+    .step-btn:hover { background: var(--lime-dim); color: var(--lime); }
+    .amodal-actions { display: flex; gap: 10px; }
+
     @media (max-width: 900px) {
       .stats-row { grid-template-columns: repeat(2, 1fr); }
       table { font-size: 12px; }
@@ -193,7 +234,7 @@ async function loadUsers() {
         <td>
           <div class="row-actions">
             <button class="btn-sm btn-assign" onclick="assignPlan(${u.id}, '${u.name}')">플랜 부여</button>
-            <button class="btn-sm btn-extend" onclick="extendPlan(${u.id}, '${u.plan || ''}')">30일 연장</button>
+            <button class="btn-sm btn-extend" onclick="extendPlan(${u.id}, '${u.plan || ''}', '${u.name}')">기간 연장</button>
             <button class="btn-sm btn-remove" onclick="removePlan(${u.id}, '${u.name}')">해제</button>
             <button class="btn-sm btn-password" onclick="resetPassword(${u.id}, '${u.name}')">비번 재설정</button>
           </div>
@@ -268,35 +309,95 @@ async function cancelOrder(orderId) {
   else alert(data.error || '오류');
 }
 
-async function assignPlan(userId, userName) {
-  const plan = prompt(`${userName}님께 부여할 플랜을 선택하세요:\n\nstart / vip`);
-  if (!plan || !['start','vip'].includes(plan.trim())) return;
-  const days = prompt('부여 기간 (일):', '30');
-  if (!days) return;
+// ── 플랜 부여 모달 ──
+let _planModalCallback = null;
+
+function openPlanModal({ userId, userName, fixedPlan = null, title }) {
+  const isExtend = !!fixedPlan;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'amodal-overlay';
+  overlay.innerHTML = `
+    <div class="amodal-box">
+      <h3>${title}</h3>
+      <p class="amodal-sub">${userName}님</p>
+
+      ${!isExtend ? `
+      <p class="amodal-label">플랜 선택</p>
+      <div class="plan-btns">
+        <button class="plan-btn" data-plan="start" onclick="selectPlanBtn(this)">
+          스타트패키지<br/><span style="font-size:11px;font-weight:400;opacity:0.7">₩199,000/월</span>
+        </button>
+        <button class="plan-btn vip-btn" data-plan="vip" onclick="selectPlanBtn(this)">
+          VIP서비스<br/><span style="font-size:11px;font-weight:400;opacity:0.7">₩499,000/월</span>
+        </button>
+      </div>
+      ` : `<p style="margin-bottom:20px;"><span class="badge badge-plan-${fixedPlan}">${PLAN_NAMES[fixedPlan]}</span> 연장</p>`}
+
+      <p class="amodal-label">기간 (일)</p>
+      <div class="days-row">
+        <input type="number" class="days-input" id="modal-days" value="30" min="1" max="365" />
+        <div class="days-stepper">
+          <button class="step-btn" onclick="stepDays(1)">▲</button>
+          <button class="step-btn" onclick="stepDays(-1)">▼</button>
+        </div>
+        <span style="color:var(--gray);font-size:13px;">일간 제공</span>
+      </div>
+
+      <div class="amodal-actions">
+        <button class="btn-lime" style="flex:1;padding:12px;" onclick="submitPlanModal(${userId},'${fixedPlan || ''}')">적용</button>
+        <button class="btn-ghost" style="padding:12px 20px;" onclick="closePlanModal()">취소</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.id = 'plan-modal-overlay';
+}
+
+function selectPlanBtn(el) {
+  document.querySelectorAll('.plan-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function stepDays(delta) {
+  const input = document.getElementById('modal-days');
+  const val = Math.min(365, Math.max(1, (parseInt(input.value) || 30) + delta));
+  input.value = val;
+}
+
+function closePlanModal() {
+  document.getElementById('plan-modal-overlay')?.remove();
+}
+
+async function submitPlanModal(userId, fixedPlan) {
+  const days = parseInt(document.getElementById('modal-days').value) || 30;
+  let plan = fixedPlan;
+
+  if (!plan) {
+    const selected = document.querySelector('.plan-btn.selected');
+    if (!selected) { alert('플랜을 선택해주세요.'); return; }
+    plan = selected.dataset.plan;
+  }
+
+  closePlanModal();
 
   const res = await fetch(`/api/admin/users/${userId}/plan`, {
     method: 'POST', credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ plan: plan.trim(), extendDays: Number(days) }),
+    body: JSON.stringify({ plan, extendDays: days }),
   });
   const data = await res.json();
-  if (res.ok) { alert('적용되었습니다.'); loadUsers(); loadStats(); }
+  if (res.ok) { alert(`적용되었습니다. (${days}일)`); loadUsers(); loadStats(); }
   else alert(data.error || '오류');
 }
 
-async function extendPlan(userId, currentPlan) {
-  if (!currentPlan) { alert('현재 플랜이 없습니다. 먼저 플랜을 부여하세요.'); return; }
-  const days = prompt('연장할 일수:', '30');
-  if (!days) return;
+function assignPlan(userId, userName) {
+  openPlanModal({ userId, userName, title: '플랜 부여' });
+}
 
-  const res = await fetch(`/api/admin/users/${userId}/plan`, {
-    method: 'POST', credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ plan: currentPlan, extendDays: Number(days) }),
-  });
-  const data = await res.json();
-  if (res.ok) { alert('연장되었습니다.'); loadUsers(); loadStats(); }
-  else alert(data.error || '오류');
+function extendPlan(userId, currentPlan, userName) {
+  if (!currentPlan) { alert('현재 플랜이 없습니다. 먼저 플랜을 부여하세요.'); return; }
+  openPlanModal({ userId, userName, fixedPlan: currentPlan, title: '플랜 연장' });
 }
 
 async function resetPassword(userId, userName) {
