@@ -81,6 +81,8 @@
     .plan-btn:hover { border-color: var(--lime); }
     .plan-btn.selected { border-color: var(--lime); background: var(--lime-dim); color: var(--lime); }
     .plan-btn.vip-btn.selected { border-color: var(--gold); background: rgba(255,215,0,0.1); color: var(--gold); }
+    .plan-btn.trial-btn.selected { border-color: #7ec8e3; background: rgba(126,200,227,0.1); color: #7ec8e3; }
+    .badge-plan-trial { background: rgba(126,200,227,0.15); color: #7ec8e3; }
     .days-row { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
     .days-input {
       width: 90px; padding: 10px 14px; border-radius: 8px;
@@ -193,7 +195,7 @@
 </div>
 
 <script>
-const PLAN_NAMES = { start: '스타트', vip: 'VIP' };
+const PLAN_NAMES = { trial: '무료체험', start: '스타트', vip: 'VIP' };
 
 function fmtDate(iso) { return iso ? new Date(iso).toLocaleDateString('ko-KR') : '-'; }
 function fmtWon(n) { return '₩' + Number(n).toLocaleString(); }
@@ -363,10 +365,13 @@ function openPlanModal({ userId, userName, fixedPlan = null, title }) {
       ${!isExtend ? `
       <p class="amodal-label">플랜 선택</p>
       <div class="plan-btns">
-        <button class="plan-btn" data-plan="start" onclick="selectPlanBtn(this)">
+        <button class="plan-btn trial-btn" data-plan="trial" data-days="7" onclick="selectPlanBtn(this)">
+          7일 무료체험<br/><span style="font-size:11px;font-weight:400;opacity:0.7">계정당 1회</span>
+        </button>
+        <button class="plan-btn" data-plan="start" data-days="30" onclick="selectPlanBtn(this)">
           스타트패키지<br/><span style="font-size:11px;font-weight:400;opacity:0.7">₩199,000/월</span>
         </button>
-        <button class="plan-btn vip-btn" data-plan="vip" onclick="selectPlanBtn(this)">
+        <button class="plan-btn vip-btn" data-plan="vip" data-days="30" onclick="selectPlanBtn(this)">
           VIP서비스<br/><span style="font-size:11px;font-weight:400;opacity:0.7">₩499,000/월</span>
         </button>
       </div>
@@ -395,6 +400,8 @@ function openPlanModal({ userId, userName, fixedPlan = null, title }) {
 function selectPlanBtn(el) {
   document.querySelectorAll('.plan-btn').forEach(b => b.classList.remove('selected'));
   el.classList.add('selected');
+  const days = el.dataset.days;
+  if (days) document.getElementById('modal-days').value = days;
 }
 
 function stepDays(delta) {

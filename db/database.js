@@ -35,6 +35,11 @@ module.exports = {
         .from('users').update({ password }).eq('id', id);
       if (error) throw error;
     },
+    async setTrialUsed(id) {
+      const { error } = await supabase
+        .from('users').update({ trial_used: true }).eq('id', id);
+      if (error) throw error;
+    },
     async findAll() {
       const { data } = await supabase
         .from('users').select('*').order('created_at', { ascending: false });

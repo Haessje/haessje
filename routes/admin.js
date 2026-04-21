@@ -5,8 +5,8 @@ const db = require('../db/database');
 const adminMiddleware = require('../middleware/admin');
 const { sendPlanEmail } = require('../utils/mailer');
 
-const PLANS = { start: '스타트패키지', vip: 'VIP서비스' };
-const PLAN_DURATIONS = { start: 30, vip: 30 };
+const PLANS = { trial: '7일무료체험', start: '스타트패키지', vip: 'VIP서비스' };
+const PLAN_DURATIONS = { trial: 7, start: 30, vip: 30 };
 
 // 관리자 권한 확인
 router.get('/check', adminMiddleware, (req, res) => {
@@ -65,13 +65,22 @@ router.post('/users/:id/plan', adminMiddleware, async (req, res) => {
 
     if (!PLANS[plan]) return res.status(400).json({ error: '유효하지 않은 플랜입니다.' });
 
-    const days = Number(extendDays) || 30;
+    // 무료체험 중복 체크
+    if (plan === 'trial' && user.trial_used) {
+      return res.status(409).json({ error: '이미 무료체험을 사용한 회원입니다.' });
+    }
+
+    const days = Number(extendDays) || PLAN_DURATIONS[plan];
     const baseDate = user.plan_expires_at && new Date(user.plan_expires_at) > new Date()
       ? new Date(user.plan_expires_at)
       : new Date();
     baseDate.setDate(baseDate.getDate() + days);
 
     await db.users.updatePlan(userId, plan, baseDate.toISOString());
+
+    if (plan === 'trial') {
+      await db.users.setTrialUsed(userId);
+    }
 
     sendPlanEmail(user.email, user.name, plan).catch(err =>
       console.error('이메일 발송 실패:', err.message)
