@@ -92,8 +92,14 @@ const TEMPLATES = {
         이제 막연한 기대가 아닌 철저한 확률의 세계로 들어오셨습니다.<br/>
         스타트패키지 활용 중 궁금하신 점은 언제든 아래 카카오톡 채널을 통해 문의해 주시기 바랍니다.
       </p>
+      <div style="margin-bottom:24px;">
+        <a href="https://pf.kakao.com/_xjIzxen/chat"
+           style="display:inline-block;background:#FEE500;color:#000;font-weight:700;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;">
+          문의하기 ▶
+        </a>
+      </div>
       <p style="font-size:15px;line-height:1.8;color:#333;">
-        고객님의 성공적인 첫 신호를 응원합니다.<br/>
+        ${userName}님의 성공적인 첫 신호를 응원합니다.<br/>
         감사합니다.
       </p>
     </div>
