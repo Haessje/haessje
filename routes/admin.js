@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const db = require('../db/database');
 const adminMiddleware = require('../middleware/admin');
+const { sendPlanEmail } = require('../utils/mailer');
 
 const PLANS = { start: '스타트패키지', vip: 'VIP서비스' };
 const PLAN_DURATIONS = { start: 30, vip: 30 };
@@ -62,6 +63,12 @@ router.post('/users/:id/plan', adminMiddleware, async (req, res) => {
     baseDate.setDate(baseDate.getDate() + days);
 
     await db.users.updatePlan(userId, plan, baseDate.toISOString());
+
+    // 이메일 발송 (실패해도 응답은 정상 처리)
+    sendPlanEmail(user.email, user.name, plan).catch(err =>
+      console.error('이메일 발송 실패:', err.message)
+    );
+
     res.json({ success: true, plan, expiresAt: baseDate.toISOString() });
   } catch (err) {
     res.status(500).json({ error: '서버 오류' });
@@ -87,6 +94,11 @@ router.post('/orders/:orderId/confirm', adminMiddleware, async (req, res) => {
 
     await db.orders.updateStatus(orderId, 'done', 'manual-deposit');
     await db.users.updatePlan(order.user_id, order.plan, baseDate.toISOString());
+
+    // 이메일 발송
+    sendPlanEmail(user.email, user.name, order.plan).catch(err =>
+      console.error('이메일 발송 실패:', err.message)
+    );
 
     res.json({ success: true, plan: order.plan, expiresAt: baseDate.toISOString() });
   } catch (err) {
