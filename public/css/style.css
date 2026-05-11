@@ -219,6 +219,8 @@ section { position: relative; z-index: 1; padding: 100px 0; }
 .pkg-name { font-size: 22px; font-weight: 800; }
 .pkg-price { font-size: 32px; font-weight: 900; font-family: 'Montserrat', sans-serif; }
 .pkg-price span { font-size: 16px; font-weight: 400; color: var(--gray); }
+.pkg-price-original { font-size: 14px; color: var(--gray); text-decoration: line-through; margin-bottom: 2px; }
+.pkg-discount-badge { display: inline-block; background: rgba(255,80,80,0.15); color: #ff6b6b; font-size: 12px; font-weight: 800; padding: 2px 8px; border-radius: 4px; margin-left: 8px; vertical-align: middle; }
 .pkg-features { list-style: none; display: flex; flex-direction: column; gap: 10px; flex:1; }
 .pkg-features li { display: flex; align-items: center; gap: 10px; font-size: 14px; color: #ccc; }
 .check { color: var(--gray); font-weight: 700; }
