@@ -79,8 +79,10 @@ checkboxes.forEach(cb => {
   cb.addEventListener('change', () => {
     cb.closest('.check-item').classList.toggle('checked', cb.checked);
     const checkedCount = [...checkboxes].filter(c => c.checked).length;
-    if (checkedCount >= 3) {
+    if (checkedCount >= 2) {
       result.classList.remove('hidden');
+    } else {
+      result.classList.add('hidden');
     }
   });
 });

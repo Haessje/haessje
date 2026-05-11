@@ -185,7 +185,7 @@ section { position: relative; z-index: 1; padding: 100px 0; }
 .pkg-card {
   position: relative; cursor: pointer;
   transform-style: preserve-3d; transition: transform 0.65s cubic-bezier(0.4,0,0.2,1);
-  height: 500px;
+  height: 560px;
 }
 .pkg-card.flipped { transform: rotateY(180deg); }
 .pkg-card.featured { transform: scale(1.03); }
@@ -221,7 +221,7 @@ section { position: relative; z-index: 1; padding: 100px 0; }
 .pkg-price span { font-size: 16px; font-weight: 400; color: var(--gray); }
 .pkg-price-original { font-size: 14px; color: var(--gray); text-decoration: line-through; margin-bottom: 2px; }
 .pkg-discount-badge { display: inline-block; background: rgba(255,80,80,0.15); color: #ff6b6b; font-size: 12px; font-weight: 800; padding: 2px 8px; border-radius: 4px; margin-left: 8px; vertical-align: middle; }
-.pkg-features { list-style: none; display: flex; flex-direction: column; gap: 10px; flex:1; }
+.pkg-features { list-style: none; display: flex; flex-direction: column; gap: 10px; }
 .pkg-features li { display: flex; align-items: center; gap: 10px; font-size: 14px; color: #ccc; }
 .check { color: var(--gray); font-weight: 700; }
 .check.lime { color: var(--lime); }
@@ -432,7 +432,7 @@ footer { background: #05050a; padding: 60px 0; border-top: 1px solid var(--borde
 @media (max-width: 900px) {
   #navbar { padding: 16px 24px; }
   .packages-grid { grid-template-columns: 1fr; }
-  .pkg-card { height: auto; min-height: 460px; }
+  .pkg-card { height: auto; min-height: 520px; }
   .features-grid { grid-template-columns: repeat(2, 1fr); }
   #bottom-bar { padding: 14px 20px; }
   .bb-label { font-size: 13px; }
