@@ -5,8 +5,8 @@ const db = require('../db/database');
 const authMiddleware = require('../middleware/auth');
 
 const PLANS = {
-  start: { name: '스타트패키지', amount: 199000, duration: 30 },
-  vip: { name: 'VIP서비스', amount: 499000, duration: 30 },
+  start: { name: '스타트패키지', amount: 349000, duration: 30 },
+  vip: { name: 'VIP서비스', amount: 2000000, duration: 30 },
 };
 
 const BANK_INFO = {
