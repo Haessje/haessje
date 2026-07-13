@@ -96,8 +96,9 @@ module.exports = {
       if (error) throw error;
     },
     async downgradeAffiliate(id) {
+      // referral_code는 유지 — 기존 추천인 소속 추적용
       const { error } = await supabase
-        .from('users').update({ user_type: 'normal', referral_code: null }).eq('id', id);
+        .from('users').update({ user_type: 'normal' }).eq('id', id);
       if (error) throw error;
     },
     async delete(id) {
