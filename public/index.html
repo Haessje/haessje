@@ -277,6 +277,30 @@
   </div>
 </section>
 
+<!-- 도매가 자격 조건 (제휴사 전용, 기본 hidden) -->
+<section id="affiliate-conditions" style="display:none;padding:60px 0 0;">
+  <div class="container">
+    <div style="background:rgba(212,255,0,0.05);border:1px solid rgba(212,255,0,0.2);border-radius:16px;padding:36px 40px;max-width:640px;margin:0 auto;">
+      <p class="section-label" style="margin-bottom:12px;">AFFILIATE TERMS</p>
+      <h2 style="font-size:22px;font-weight:800;margin-bottom:24px;">【도매가 회원 자격 조건】</h2>
+      <ul style="list-style:none;display:flex;flex-direction:column;gap:16px;">
+        <li style="display:flex;gap:14px;align-items:flex-start;">
+          <span style="color:var(--lime);font-size:18px;margin-top:1px;">✓</span>
+          <span style="color:#ccc;font-size:15px;line-height:1.6;">본인이 <strong style="color:#fff;">1개월 이상</strong> 지표 / 검색기 사용 경험자</span>
+        </li>
+        <li style="display:flex;gap:14px;align-items:flex-start;">
+          <span style="color:var(--lime);font-size:18px;margin-top:1px;">✓</span>
+          <span style="color:#ccc;font-size:15px;line-height:1.6;">위원장 및 부위원장이 진행하는 <strong style="color:#fff;">교육 세션 참석 필수</strong></span>
+        </li>
+        <li style="display:flex;gap:14px;align-items:flex-start;">
+          <span style="color:var(--lime);font-size:18px;margin-top:1px;">✓</span>
+          <span style="color:#ccc;font-size:15px;line-height:1.6;"><strong style="color:#fff;">3개월 이내 최소 1건 이상</strong> 소개 실적 필요<br><span style="font-size:13px;color:#888;">(미달 시 일반 회원 전환)</span></span>
+        </li>
+      </ul>
+    </div>
+  </div>
+</section>
+
 <!-- ── 패키지 ── -->
 <section id="packages">
   <div class="container">
@@ -385,29 +409,6 @@
   </div>
 </section>
 
-<!-- 도매가 자격 조건 (제휴사 전용, 기본 hidden) -->
-<section id="affiliate-conditions" style="display:none;padding:60px 0;">
-  <div class="container">
-    <div style="background:rgba(212,255,0,0.05);border:1px solid rgba(212,255,0,0.2);border-radius:16px;padding:36px 40px;max-width:640px;margin:0 auto;">
-      <p class="section-label" style="margin-bottom:12px;">AFFILIATE TERMS</p>
-      <h2 style="font-size:22px;font-weight:800;margin-bottom:24px;">【도매가 회원 자격 조건】</h2>
-      <ul style="list-style:none;display:flex;flex-direction:column;gap:16px;">
-        <li style="display:flex;gap:14px;align-items:flex-start;">
-          <span style="color:var(--lime);font-size:18px;margin-top:1px;">✓</span>
-          <span style="color:#ccc;font-size:15px;line-height:1.6;">본인이 <strong style="color:#fff;">1개월 이상</strong> 지표 / 검색기 사용 경험자</span>
-        </li>
-        <li style="display:flex;gap:14px;align-items:flex-start;">
-          <span style="color:var(--lime);font-size:18px;margin-top:1px;">✓</span>
-          <span style="color:#ccc;font-size:15px;line-height:1.6;">위원장 및 부위원장이 진행하는 <strong style="color:#fff;">교육 세션 참석 필수</strong></span>
-        </li>
-        <li style="display:flex;gap:14px;align-items:flex-start;">
-          <span style="color:var(--lime);font-size:18px;margin-top:1px;">✓</span>
-          <span style="color:#ccc;font-size:15px;line-height:1.6;"><strong style="color:#fff;">3개월 이내 최소 1건 이상</strong> 소개 실적 필요<br><span style="font-size:13px;color:#888;">(미달 시 일반 회원 전환)</span></span>
-        </li>
-      </ul>
-    </div>
-  </div>
-</section>
 
 <!-- ── 왜 했제인가 (시각화) ── -->
 <section id="results">
@@ -1042,7 +1043,7 @@ function applyAffPrices(userType) {
 
   // 7일 무료체험 배너 숨기기 + 버튼 텍스트 변경
   const trialBanner = document.getElementById('start-trial-banner');
-  if (trialBanner) trialBanner.style.display = 'none';
+  if (trialBanner) trialBanner.style.visibility = 'hidden';
   const startBtn = document.getElementById('start-btn');
   if (startBtn) startBtn.textContent = '스타트 패키지 시작하기';
 
