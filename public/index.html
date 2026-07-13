@@ -320,7 +320,7 @@
         <div class="pkg-badge-top">Best</div>
         <div class="pkg-front">
           <div class="pkg-badge lime">STARTER</div>
-          <h3 class="pkg-name">H시그널 종목 검색기</h3>
+          <h3 class="pkg-name">스타트 패키지</h3>
           <div class="pkg-price-original">정상가 ₩1,250,000/월</div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;">
             <span class="pkg-promo-tag">첫결제 할인</span>
@@ -335,10 +335,10 @@
             <li><span class="check lime">✓</span> 전용 채널 입장</li>
           </ul>
           <div style="margin-top:auto;">
-            <div style="margin-bottom:10px;padding:10px 14px;background:rgba(212,255,0,0.07);border:1px dashed rgba(212,255,0,0.3);border-radius:8px;font-size:12px;color:#d4ff00;text-align:center;">
+            <div id="start-trial-banner" style="margin-bottom:10px;padding:10px 14px;background:rgba(212,255,0,0.07);border:1px dashed rgba(212,255,0,0.3);border-radius:8px;font-size:12px;color:#d4ff00;text-align:center;">
               🎁 회원가입 시 7일 무료체험 제공
             </div>
-            <button class="btn-lime btn-buy" style="margin-top:0;" data-product="start" data-planname="H시그널 종목 검색기" onclick="startPurchase('start', 349000, 'H시그널 종목 검색기')">
+            <button class="btn-lime btn-buy" style="margin-top:0;" id="start-btn" data-product="start" data-planname="스타트패키지" onclick="startPurchase('start', 349000, '스타트패키지')">
               7일 무료체험 해보기
             </button>
           </div>
@@ -381,6 +381,30 @@
         </div>
       </div>
 
+    </div>
+  </div>
+</section>
+
+<!-- 도매가 자격 조건 (제휴사 전용, 기본 hidden) -->
+<section id="affiliate-conditions" style="display:none;padding:60px 0;">
+  <div class="container">
+    <div style="background:rgba(212,255,0,0.05);border:1px solid rgba(212,255,0,0.2);border-radius:16px;padding:36px 40px;max-width:640px;margin:0 auto;">
+      <p class="section-label" style="margin-bottom:12px;">AFFILIATE TERMS</p>
+      <h2 style="font-size:22px;font-weight:800;margin-bottom:24px;">【도매가 회원 자격 조건】</h2>
+      <ul style="list-style:none;display:flex;flex-direction:column;gap:16px;">
+        <li style="display:flex;gap:14px;align-items:flex-start;">
+          <span style="color:var(--lime);font-size:18px;margin-top:1px;">✓</span>
+          <span style="color:#ccc;font-size:15px;line-height:1.6;">본인이 <strong style="color:#fff;">1개월 이상</strong> 지표 / 검색기 사용 경험자</span>
+        </li>
+        <li style="display:flex;gap:14px;align-items:flex-start;">
+          <span style="color:var(--lime);font-size:18px;margin-top:1px;">✓</span>
+          <span style="color:#ccc;font-size:15px;line-height:1.6;">위원장 및 부위원장이 진행하는 <strong style="color:#fff;">교육 세션 참석 필수</strong></span>
+        </li>
+        <li style="display:flex;gap:14px;align-items:flex-start;">
+          <span style="color:var(--lime);font-size:18px;margin-top:1px;">✓</span>
+          <span style="color:#ccc;font-size:15px;line-height:1.6;"><strong style="color:#fff;">3개월 이내 최소 1건 이상</strong> 소개 실적 필요<br><span style="font-size:13px;color:#888;">(미달 시 일반 회원 전환)</span></span>
+        </li>
+      </ul>
     </div>
   </div>
 </section>
@@ -987,12 +1011,12 @@ document.getElementById('ethics-overlay').addEventListener('click', function(e) 
 <script>
 // 제휴사/추천고객 가격 적용
 const AFF_PRICE_LABELS = {
-  affiliate: { hsignal: '₩30,000',  start: '₩120,000', vip: '₩100,000' },
-  referred:  { hsignal: '₩70,000',  start: '₩250,000', vip: '₩200,000' },
+  affiliate: { hsignal: '₩30,000',  start: '₩100,000', vip: '₩2,000,000' },
+  referred:  { hsignal: '₩70,000',  start: '₩100,000', vip: '₩2,000,000' },
 };
 const AFF_PRICE_AMOUNTS = {
-  affiliate: { hsignal: 30000,  start: 120000, vip: 100000 },
-  referred:  { hsignal: 70000,  start: 250000, vip: 200000 },
+  affiliate: { hsignal: 30000,  start: 100000, vip: 2000000 },
+  referred:  { hsignal: 70000,  start: 100000, vip: 2000000 },
 };
 
 function applyAffPrices(userType) {
@@ -1001,11 +1025,13 @@ function applyAffPrices(userType) {
   const amounts = AFF_PRICE_AMOUNTS[userType];
   if (!labels) return;
 
+  // 가격 업데이트
   document.querySelectorAll('.pkg-price[data-product]').forEach(el => {
     const k = el.dataset.product;
     if (labels[k]) el.innerHTML = `${labels[k]}<span>/월</span>`;
   });
 
+  // 버튼 onclick 금액 업데이트
   document.querySelectorAll('.btn-buy[data-product]').forEach(btn => {
     const k = btn.dataset.product;
     const planName = btn.dataset.planname;
@@ -1014,6 +1040,12 @@ function applyAffPrices(userType) {
     }
   });
 
+  // 7일 무료체험 배너 숨기기 + 버튼 텍스트 변경
+  const trialBanner = document.getElementById('start-trial-banner');
+  if (trialBanner) trialBanner.style.display = 'none';
+  const startBtn = document.getElementById('start-btn');
+  if (startBtn) startBtn.textContent = '스타트 패키지 시작하기';
+
   // 안내 배너 노출
   const banner = document.getElementById('aff-price-banner');
   if (banner) {
@@ -1021,6 +1053,16 @@ function applyAffPrices(userType) {
       ? '✅ 제휴사 적용가(도매가)가 적용되었습니다.'
       : '✅ 추천코드 할인가가 적용되었습니다.';
     banner.style.display = 'block';
+  }
+
+  // 제휴사 전용: 이런경험/후기 섹션 숨기고 자격 조건 표시
+  if (userType === 'affiliate') {
+    const prob = document.getElementById('problem');
+    const rev = document.getElementById('reviews');
+    if (prob) prob.style.display = 'none';
+    if (rev) rev.style.display = 'none';
+    const cond = document.getElementById('affiliate-conditions');
+    if (cond) cond.style.display = 'block';
   }
 }
 </script>

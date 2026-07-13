@@ -7,16 +7,16 @@ const authMiddleware = require('../middleware/auth');
 // 등급별 가격표
 const PRICES = {
   normal:    { hsignal: 150000, start: 349000, vip: 2000000 },
-  affiliate: { hsignal:  30000, start: 120000, vip:  100000 },
-  referred:  { hsignal:  70000, start: 250000, vip:  200000 },
+  affiliate: { hsignal:  30000, start: 100000, vip: 2000000 },
+  referred:  { hsignal:  70000, start: 100000, vip: 2000000 },
 };
 
 // 도매가 (제휴사 포인트 마진 계산 기준)
-const WHOLESALE = { hsignal: 30000, start: 120000, vip: 100000 };
+const WHOLESALE = { hsignal: 30000, start: 100000, vip: 2000000 };
 
 const PLAN_NAMES = {
   hsignal: 'H시그널 지표',
-  start: 'H시그널 종목 검색기',
+  start: '스타트패키지',
   vip: 'VIP서비스',
 };
 
