@@ -85,6 +85,20 @@ module.exports = {
         .from('users').select('*').eq('referred_by', referralCode).order('created_at', { ascending: false });
       return data || [];
     },
+    async setPoints(id, points) {
+      const { error } = await supabase
+        .from('users').update({ points }).eq('id', id);
+      if (error) throw error;
+    },
+    async downgradeAffiliate(id) {
+      const { error } = await supabase
+        .from('users').update({ user_type: 'normal', referral_code: null }).eq('id', id);
+      if (error) throw error;
+    },
+    async delete(id) {
+      const { error } = await supabase.from('users').delete().eq('id', id);
+      if (error) throw error;
+    },
   },
 
   orders: {

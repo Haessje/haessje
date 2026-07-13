@@ -238,17 +238,84 @@ router.get('/affiliate-invites', adminMiddleware, async (req, res) => {
   }
 });
 
-// 제휴사 목록 + 포인트 현황
+// 제휴사 목록 + 포인트 현황 + 3개월 미결제 자동 강등
 router.get('/affiliates', adminMiddleware, async (req, res) => {
   try {
-    const users = await db.users.findAll();
-    const affiliates = users
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+
+    const allUsers = await db.users.findAll();
+    const currentAffiliates = allUsers.filter(u => u.user_type === 'affiliate');
+
+    for (const aff of currentAffiliates) {
+      const transactions = await db.pointsTransactions.findByUserId(aff.id);
+      const earnTxns = transactions.filter(t => t.type === 'earn');
+
+      let shouldDowngrade = false;
+      if (earnTxns.length === 0) {
+        if (new Date(aff.created_at) < threeMonthsAgo) shouldDowngrade = true;
+      } else {
+        if (new Date(earnTxns[0].created_at) < threeMonthsAgo) shouldDowngrade = true;
+      }
+
+      if (shouldDowngrade) await db.users.downgradeAffiliate(aff.id);
+    }
+
+    const freshUsers = await db.users.findAll();
+    const affiliates = freshUsers
       .filter(u => u.user_type === 'affiliate')
-      .map(u => {
-        const { password, ...safe } = u;
-        return safe;
-      });
+      .map(u => { const { password, ...safe } = u; return safe; });
     res.json({ affiliates });
+  } catch (err) {
+    res.status(500).json({ error: '서버 오류' });
+  }
+});
+
+// 회원 삭제
+router.delete('/users/:id', adminMiddleware, async (req, res) => {
+  const userId = parseInt(req.params.id);
+  try {
+    const user = await db.users.findById(userId);
+    if (!user) return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
+    await db.users.delete(userId);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: '서버 오류' });
+  }
+});
+
+// 제휴사 포인트 수정
+router.post('/affiliates/:id/points', adminMiddleware, async (req, res) => {
+  const userId = parseInt(req.params.id);
+  const { points } = req.body;
+  if (points === undefined || isNaN(parseInt(points)) || parseInt(points) < 0) {
+    return res.status(400).json({ error: '유효하지 않은 포인트 값입니다.' });
+  }
+  try {
+    await db.users.setPoints(userId, parseInt(points));
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: '서버 오류' });
+  }
+});
+
+// 제휴사 등급 강등 (일반 회원으로)
+router.post('/affiliates/:id/downgrade', adminMiddleware, async (req, res) => {
+  const userId = parseInt(req.params.id);
+  try {
+    await db.users.downgradeAffiliate(userId);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: '서버 오류' });
+  }
+});
+
+// 제휴사 계정 삭제
+router.delete('/affiliates/:id', adminMiddleware, async (req, res) => {
+  const userId = parseInt(req.params.id);
+  try {
+    await db.users.delete(userId);
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: '서버 오류' });
   }

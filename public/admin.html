@@ -49,6 +49,9 @@
     .btn-remove { background: rgba(255,85,85,0.1); color: #ff5555; border: 1px solid rgba(255,85,85,0.4); }
     .btn-assign { background: rgba(255,255,255,0.06); color: var(--white); border: 1px solid var(--border); }
     .btn-password { background: rgba(100,150,255,0.1); color: #6496ff; border: 1px solid rgba(100,150,255,0.4); }
+    .btn-delete { background: rgba(255,55,55,0.15); color: #ff4444; border: 1px solid rgba(255,55,55,0.5); }
+    .btn-points { background: rgba(212,255,0,0.1); color: var(--lime); border: 1px solid rgba(212,255,0,0.4); }
+    .btn-downgrade { background: rgba(255,165,0,0.1); color: #ffaa44; border: 1px solid rgba(255,165,0,0.4); }
     .btn-confirm { background: var(--lime); color: #000; border: none; }
     .btn-cancel { background: rgba(255,85,85,0.1); color: #ff5555; border: 1px solid rgba(255,85,85,0.4); }
 
@@ -214,10 +217,10 @@
     <h3 style="font-size:15px;font-weight:700;margin-bottom:14px;">제휴사 목록</h3>
     <table style="margin-bottom:28px;">
       <thead>
-        <tr><th>이름</th><th>이메일</th><th>추천코드</th><th>보유 포인트</th><th>가입일</th></tr>
+        <tr><th>이름</th><th>이메일</th><th>추천코드</th><th>보유 포인트</th><th>가입일</th><th style="width:220px;">작업</th></tr>
       </thead>
       <tbody id="affiliates-body">
-        <tr><td colspan="5" class="empty">로딩 중...</td></tr>
+        <tr><td colspan="6" class="empty">로딩 중...</td></tr>
       </tbody>
     </table>
 
@@ -314,6 +317,7 @@ async function loadUsers() {
             <button class="btn-sm btn-extend" onclick="changePeriod(${u.id}, '${u.name}', '${u.plan_expires_at || ''}')">기간 변경</button>
             <button class="btn-sm btn-remove" onclick="removePlan(${u.id}, '${u.name}')">해제</button>
             <button class="btn-sm btn-password" onclick="resetPassword(${u.id}, '${u.name}')">비번 재설정</button>
+            <button class="btn-sm btn-delete" onclick="deleteUser(${u.id}, '${u.name}')">삭제</button>
           </div>
         </td>
       </tr>
@@ -628,7 +632,7 @@ async function loadAffiliates() {
 
   const ab = document.getElementById('affiliates-body');
   if (!affiliates || affiliates.length === 0) {
-    ab.innerHTML = '<tr><td colspan="5" class="empty">등록된 제휴사가 없습니다.</td></tr>';
+    ab.innerHTML = '<tr><td colspan="6" class="empty">등록된 제휴사가 없습니다.</td></tr>';
   } else {
     ab.innerHTML = affiliates.map(u => `
       <tr>
@@ -637,6 +641,13 @@ async function loadAffiliates() {
         <td><code style="background:rgba(255,255,255,0.08);padding:2px 8px;border-radius:4px;font-size:12px;">${u.referral_code || '-'}</code></td>
         <td style="color:var(--lime);font-weight:700;">${(u.points || 0).toLocaleString()} P</td>
         <td>${fmtDate(u.created_at)}</td>
+        <td>
+          <div class="row-actions">
+            <button class="btn-sm btn-points" onclick="editAffPoints(${u.id}, '${u.name}', ${u.points || 0})">포인트 수정</button>
+            <button class="btn-sm btn-downgrade" onclick="downgradeAff(${u.id}, '${u.name}')">등급 강등</button>
+            <button class="btn-sm btn-delete" onclick="deleteAff(${u.id}, '${u.name}')">삭제</button>
+          </div>
+        </td>
       </tr>`).join('');
   }
 
@@ -663,6 +674,54 @@ async function loadAffiliates() {
         </td>
       </tr>`).join('');
   }
+}
+
+async function deleteUser(userId, userName) {
+  if (!confirm(`${userName}님의 계정을 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`)) return;
+  const res = await fetch(`/api/admin/users/${userId}`, {
+    method: 'DELETE', credentials: 'include',
+  });
+  const data = await res.json();
+  if (res.ok) { alert('삭제되었습니다.'); loadUsers(); loadStats(); }
+  else alert(data.error || '오류');
+}
+
+async function editAffPoints(userId, userName, currentPoints) {
+  const input = prompt(`${userName}님의 포인트를 수정합니다.\n현재: ${currentPoints.toLocaleString()} P\n\n새 포인트 값:`);
+  if (input === null) return;
+  const newPoints = parseInt(input);
+  if (isNaN(newPoints) || newPoints < 0) { alert('유효하지 않은 값입니다.'); return; }
+  if (!confirm(`${userName}님의 포인트를 ${newPoints.toLocaleString()} P로 변경하시겠습니까?`)) return;
+
+  const res = await fetch(`/api/admin/affiliates/${userId}/points`, {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ points: newPoints }),
+  });
+  const data = await res.json();
+  if (res.ok) { alert('포인트가 수정되었습니다.'); loadAffiliates(); }
+  else alert(data.error || '오류');
+}
+
+async function downgradeAff(userId, userName) {
+  if (!confirm(`${userName}님을 일반 회원으로 등급 강등하시겠습니까?\n추천 코드도 삭제됩니다.`)) return;
+  const res = await fetch(`/api/admin/affiliates/${userId}/downgrade`, {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  const data = await res.json();
+  if (res.ok) { alert('등급이 일반 회원으로 변경되었습니다.'); loadAffiliates(); loadUsers(); }
+  else alert(data.error || '오류');
+}
+
+async function deleteAff(userId, userName) {
+  if (!confirm(`${userName}님(제휴사)의 계정을 완전히 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`)) return;
+  const res = await fetch(`/api/admin/affiliates/${userId}`, {
+    method: 'DELETE', credentials: 'include',
+  });
+  const data = await res.json();
+  if (res.ok) { alert('삭제되었습니다.'); loadAffiliates(); loadStats(); }
+  else alert(data.error || '오류');
 }
 
 async function processWithdrawal(id, status) {
