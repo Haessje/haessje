@@ -1065,6 +1065,15 @@ function applyAffPrices(userType) {
     const cond = document.getElementById('affiliate-conditions');
     if (cond) cond.style.display = 'block';
   }
+
+  // 레이아웃 변경 후 ScrollTrigger 재계산 + 이미 뷰포트 안에 있는 reveal 요소 강제 표시
+  setTimeout(function() {
+    if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh();
+    document.querySelectorAll('.reveal').forEach(function(el) {
+      var rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight * 0.92) el.classList.add('visible');
+    });
+  }, 150);
 }
 </script>
 </body>
