@@ -201,7 +201,7 @@ function closeAuthModal() {
   document.getElementById('auth-modal').classList.add('hidden');
 }
 
-// 로그인 상태 확인
+// 로그인 상태 확인 + 가격 적용
 (async function checkAuth() {
   try {
     const res = await fetch('/api/auth/me', { credentials: 'include' });
@@ -209,6 +209,17 @@ function closeAuthModal() {
       document.getElementById('nav-login-btn')?.classList.add('hidden');
       document.getElementById('nav-register-btn')?.classList.add('hidden');
       document.getElementById('nav-dashboard-btn')?.classList.remove('hidden');
+      try {
+        const pr = await fetch('/api/payment/my-prices', { credentials: 'include' });
+        if (pr.ok) { const { user_type } = await pr.json(); applyAffPrices(user_type); }
+      } catch {}
     }
   } catch {}
+})();
+
+// ── 추가: URL 파라미터 저장 (제휴사 토큰 / 추천코드)
+(function saveUrlParams() {
+  const p = new URLSearchParams(window.location.search);
+  if (p.get('aff')) localStorage.setItem('haessje_aff', p.get('aff'));
+  if (p.get('ref')) localStorage.setItem('haessje_ref', p.get('ref'));
 })();

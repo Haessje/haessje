@@ -2,11 +2,12 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const db = require('../db/database');
 
 // 회원가입
 router.post('/register', async (req, res) => {
-  const { email, password, name, phone } = req.body;
+  const { email, password, name, phone, aff_token, ref_code } = req.body;
   if (!email || !password || !name) {
     return res.status(400).json({ error: '필수 항목을 입력해주세요.' });
   }
@@ -17,6 +18,23 @@ router.post('/register', async (req, res) => {
 
     const hashed = await bcrypt.hash(password, 10);
     const user = await db.users.create({ email, password: hashed, name, phone });
+
+    // 제휴사 초대 토큰으로 가입 → affiliate 등급 + 고유 추천코드 발급
+    if (aff_token) {
+      const invite = await db.affiliateInvites.findByToken(aff_token);
+      if (invite && !invite.used_by_user_id) {
+        const referralCode = crypto.randomBytes(4).toString('hex').toUpperCase();
+        await db.users.setAffiliate(user.id, referralCode);
+        await db.affiliateInvites.markUsed(aff_token, user.id);
+      }
+    }
+    // 추천코드로 가입 → referred 등급 부여
+    else if (ref_code) {
+      const affiliateUser = await db.users.findByReferralCode(ref_code);
+      if (affiliateUser && affiliateUser.user_type === 'affiliate') {
+        await db.users.setReferred(user.id, ref_code);
+      }
+    }
 
     const token = jwt.sign(
       { id: user.id, email: user.email, name: user.name },

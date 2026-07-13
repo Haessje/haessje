@@ -208,4 +208,93 @@ router.get('/stats', adminMiddleware, async (req, res) => {
   }
 });
 
+// ── 제휴사 관리 ──
+
+// 제휴사 초대 링크 토큰 생성
+router.post('/affiliate-invite', adminMiddleware, async (req, res) => {
+  try {
+    const crypto = require('crypto');
+    const token = crypto.randomBytes(8).toString('hex').toUpperCase();
+    const invite = await db.affiliateInvites.create(token);
+    const link = `${process.env.BASE_URL || 'https://haessje.onrender.com'}/?aff=${token}`;
+    res.json({ success: true, token, link, created_at: invite.created_at });
+  } catch (err) {
+    res.status(500).json({ error: '서버 오류' });
+  }
+});
+
+// 제휴사 초대 목록
+router.get('/affiliate-invites', adminMiddleware, async (req, res) => {
+  try {
+    const invites = await db.affiliateInvites.findAll();
+    const users = await db.users.findAll();
+    const result = invites.map(i => {
+      const u = users.find(x => x.id === i.used_by_user_id);
+      return { ...i, used_by_name: u?.name, used_by_email: u?.email };
+    });
+    res.json({ invites: result });
+  } catch (err) {
+    res.status(500).json({ error: '서버 오류' });
+  }
+});
+
+// 제휴사 목록 + 포인트 현황
+router.get('/affiliates', adminMiddleware, async (req, res) => {
+  try {
+    const users = await db.users.findAll();
+    const affiliates = users
+      .filter(u => u.user_type === 'affiliate')
+      .map(u => {
+        const { password, ...safe } = u;
+        return safe;
+      });
+    res.json({ affiliates });
+  } catch (err) {
+    res.status(500).json({ error: '서버 오류' });
+  }
+});
+
+// 출금 신청 목록
+router.get('/withdrawals', adminMiddleware, async (req, res) => {
+  try {
+    const allUsers = await db.users.findAll();
+    const withdrawals = (await db.withdrawalRequests.findAll()).map(w => {
+      const u = allUsers.find(x => x.id === w.user_id);
+      return { ...w, user_name: u?.name, user_email: u?.email };
+    });
+    res.json({ withdrawals });
+  } catch (err) {
+    res.status(500).json({ error: '서버 오류' });
+  }
+});
+
+// 출금 신청 승인/거절
+router.post('/withdrawals/:id/process', adminMiddleware, async (req, res) => {
+  const { status, admin_note } = req.body;
+  if (!['approved', 'rejected'].includes(status)) {
+    return res.status(400).json({ error: '유효하지 않은 상태입니다.' });
+  }
+  try {
+    const allW = await db.withdrawalRequests.findAll();
+    const w = allW.find(x => x.id === parseInt(req.params.id));
+    if (!w) return res.status(404).json({ error: '출금 신청을 찾을 수 없습니다.' });
+
+    // 거절 시 포인트 환불
+    if (status === 'rejected') {
+      await db.users.addPoints(w.user_id, w.points_amount);
+      await db.pointsTransactions.create({
+        user_id: w.user_id,
+        type: 'refund',
+        amount: w.points_amount,
+        description: '출금 신청 거절 - 포인트 환불',
+      });
+    }
+
+    await db.withdrawalRequests.updateStatus(parseInt(req.params.id), status, admin_note || '');
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: '서버 오류' });
+  }
+});
+
 module.exports = router;

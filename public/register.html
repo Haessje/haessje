@@ -81,6 +81,23 @@
 </div>
 
 <script>
+// URL 또는 localStorage에서 aff/ref 토큰 읽기
+(function() {
+  const p = new URLSearchParams(window.location.search);
+  if (p.get('aff')) localStorage.setItem('haessje_aff', p.get('aff'));
+  if (p.get('ref')) localStorage.setItem('haessje_ref', p.get('ref'));
+
+  // 추천코드로 온 경우 안내 표시
+  const ref = localStorage.getItem('haessje_ref');
+  const aff = localStorage.getItem('haessje_aff');
+  if (ref || aff) {
+    const sub = document.querySelector('.auth-sub');
+    if (sub) sub.textContent = ref
+      ? '추천 할인가가 적용됩니다 🎉'
+      : '제휴사 초대 링크로 가입합니다.';
+  }
+})();
+
 document.getElementById('register-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn = document.getElementById('submit-btn');
@@ -99,16 +116,22 @@ document.getElementById('register-form').addEventListener('submit', async (e) =>
 
   btn.textContent = '처리 중...'; btn.disabled = true;
 
+  // 저장된 aff/ref 토큰 첨부
+  const aff_token = localStorage.getItem('haessje_aff') || undefined;
+  const ref_code  = localStorage.getItem('haessje_ref') || undefined;
+
   try {
     const res = await fetch('/api/auth/register', {
       method: 'POST', credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, name, phone }),
+      body: JSON.stringify({ email, password, name, phone, aff_token, ref_code }),
     });
     const data = await res.json();
     if (!res.ok) {
       err.textContent = data.error; err.style.display = 'block';
     } else {
+      localStorage.removeItem('haessje_aff');
+      localStorage.removeItem('haessje_ref');
       window.location.href = '/dashboard';
     }
   } catch {

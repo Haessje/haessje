@@ -4,9 +4,20 @@ const crypto = require('crypto');
 const db = require('../db/database');
 const authMiddleware = require('../middleware/auth');
 
-const PLANS = {
-  start: { name: '스타트패키지', amount: 349000, duration: 30 },
-  vip: { name: 'VIP서비스', amount: 2000000, duration: 30 },
+// 등급별 가격표
+const PRICES = {
+  normal:    { hsignal: 150000, start: 349000, vip: 2000000 },
+  affiliate: { hsignal:  30000, start: 120000, vip:  100000 },
+  referred:  { hsignal:  70000, start: 250000, vip:  200000 },
+};
+
+// 도매가 (제휴사 포인트 마진 계산 기준)
+const WHOLESALE = { hsignal: 30000, start: 120000, vip: 100000 };
+
+const PLAN_NAMES = {
+  hsignal: 'H시그널 지표',
+  start: 'H시그널 종목 검색기',
+  vip: 'VIP서비스',
 };
 
 const BANK_INFO = {
@@ -15,18 +26,33 @@ const BANK_INFO = {
   holder: '(주)팔로인',
 };
 
+// 내 가격표 조회 (로그인 후 프론트에서 호출)
+router.get('/my-prices', authMiddleware, async (req, res) => {
+  try {
+    const user = await db.users.findById(req.user.id);
+    const userType = user?.user_type || 'normal';
+    res.json({ prices: PRICES[userType] || PRICES.normal, user_type: userType });
+  } catch (err) {
+    res.status(500).json({ error: '서버 오류' });
+  }
+});
+
 // 주문 생성 (무통장입금)
 router.post('/create-order', authMiddleware, async (req, res) => {
   const { plan, depositor } = req.body;
-  if (!PLANS[plan]) return res.status(400).json({ error: '유효하지 않은 플랜입니다.' });
+  if (!PLAN_NAMES[plan]) return res.status(400).json({ error: '유효하지 않은 플랜입니다.' });
 
   const depName = (depositor || '').trim();
   if (!depName) return res.status(400).json({ error: '입금자명을 입력해 주세요.' });
 
-  const orderId = `HSJ${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
-  const { amount, name } = PLANS[plan];
-
   try {
+    const user = await db.users.findById(req.user.id);
+    const userType = user?.user_type || 'normal';
+    const amount = (PRICES[userType] || PRICES.normal)[plan];
+    const name = PLAN_NAMES[plan];
+
+    const orderId = `HSJ${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+
     await db.orders.create({
       user_id: req.user.id,
       order_id: orderId,
@@ -35,13 +61,25 @@ router.post('/create-order', authMiddleware, async (req, res) => {
       depositor: depName,
     });
 
-    res.json({
-      orderId,
-      amount,
-      planName: name,
-      depositor: depName,
-      bank: BANK_INFO,
-    });
+    // referred 유저 결제 시 → 해당 제휴사에 마진 포인트 적립
+    if (userType === 'referred' && user.referred_by) {
+      const affiliateUser = await db.users.findByReferralCode(user.referred_by);
+      if (affiliateUser) {
+        const margin = amount - WHOLESALE[plan];
+        if (margin > 0) {
+          await db.users.addPoints(affiliateUser.id, margin);
+          await db.pointsTransactions.create({
+            user_id: affiliateUser.id,
+            type: 'earn',
+            amount: margin,
+            description: `${name} 판매 마진 (${user.name}님)`,
+            order_id: orderId,
+          });
+        }
+      }
+    }
+
+    res.json({ orderId, amount, planName: name, depositor: depName, bank: BANK_INFO });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: '주문 생성 중 오류가 발생했습니다.' });
@@ -66,3 +104,4 @@ router.get('/orders', authMiddleware, async (req, res) => {
 });
 
 module.exports = router;
+module.exports.WHOLESALE = WHOLESALE;

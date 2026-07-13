@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>제휴사 대시보드 — 했제</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <style>
+    body { display:flex; flex-direction:column; min-height:100vh; }
+    .page-wrap { flex:1; padding:100px 24px 60px; max-width:900px; margin:0 auto; width:100%; }
+    .page-title { font-size:28px; font-weight:800; margin-bottom:4px; }
+    .page-sub { color:var(--gray); font-size:14px; margin-bottom:36px; }
+    .stat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:32px; }
+    .stat-card { background:var(--card-bg); border:1px solid var(--border); border-radius:12px; padding:24px 20px; }
+    .stat-label { font-size:12px; color:var(--gray); text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px; }
+    .stat-value { font-size:28px; font-weight:900; font-family:'Montserrat',sans-serif; }
+    .stat-value.lime { color:var(--lime); }
+    .stat-value.gold { color:var(--gold); }
+    .panel { background:var(--card-bg); border:1px solid var(--border); border-radius:12px; padding:28px; margin-bottom:24px; }
+    .panel-title { font-size:16px; font-weight:700; margin-bottom:20px; }
+    .ref-link-box { display:flex; gap:10px; align-items:center; }
+    .ref-link-input { flex:1; background:rgba(255,255,255,0.06); border:1px solid var(--border); border-radius:8px; padding:12px 14px; color:var(--white); font-size:13px; outline:none; }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    th { text-align:left; padding:8px 12px; color:var(--gray); font-weight:600; border-bottom:1px solid var(--border); }
+    td { padding:10px 12px; border-bottom:1px solid rgba(255,255,255,0.05); color:#ccc; }
+    .badge-sm { display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700; }
+    .badge-green { background:rgba(0,200,100,0.15); color:#00c864; }
+    .badge-gray  { background:rgba(255,255,255,0.08); color:#888; }
+    .badge-gold  { background:rgba(255,215,0,0.15); color:var(--gold); }
+    .withdraw-form { display:grid; gap:14px; }
+    .form-row { display:flex; flex-direction:column; gap:6px; }
+    .form-row label { font-size:12px; color:var(--gray); font-weight:600; }
+    .form-row input { background:rgba(255,255,255,0.06); border:1px solid var(--border); border-radius:8px; padding:11px 14px; color:var(--white); font-size:14px; outline:none; }
+    .form-row input:focus { border-color:var(--lime); }
+    .tab-nav { display:flex; gap:4px; margin-bottom:20px; flex-wrap:wrap; }
+    .tab-btn { padding:8px 18px; border-radius:6px; border:1px solid var(--border); background:transparent; color:var(--gray); font-size:13px; cursor:pointer; }
+    .tab-btn.active { background:var(--lime); color:#000; border-color:var(--lime); font-weight:700; }
+    .tab-content { display:none; }
+    .tab-content.active { display:block; }
+    .withdraw-note { font-size:12px; color:var(--gray); line-height:1.8; background:rgba(255,255,255,0.04); padding:14px 16px; border-radius:8px; }
+    @media(max-width:600px) { .stat-grid { grid-template-columns:1fr 1fr; } }
+  </style>
+</head>
+<body>
+<nav id="navbar">
+  <a href="/" class="logo">Haessje<span class="dot">.</span></a>
+  <div class="nav-links">
+    <a href="/dashboard">마이페이지</a>
+    <button onclick="doLogout()" class="btn-ghost" style="padding:8px 16px;font-size:13px;">로그아웃</button>
+  </div>
+</nav>
+
+<div class="page-wrap">
+  <h1 class="page-title">제휴사 대시보드</h1>
+  <p class="page-sub" id="aff-email"></p>
+
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-label">보유 포인트</div>
+      <div class="stat-value lime" id="stat-points">0 P</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">초대한 회원</div>
+      <div class="stat-value" id="stat-referred">0 명</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">누적 적립</div>
+      <div class="stat-value gold" id="stat-earned">0 P</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">📎 내 추천 링크</div>
+    <p style="font-size:13px;color:var(--gray);margin-bottom:14px;">이 링크로 가입한 고객은 추천코드 할인가가 자동 적용됩니다.</p>
+    <div class="ref-link-box">
+      <input class="ref-link-input" id="ref-link-input" readonly />
+      <button class="btn-lime" style="padding:11px 20px;font-size:13px;" onclick="copyRefLink()">복사</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="tab-nav">
+      <button class="tab-btn active" onclick="switchTab('tab-referred', this)">초대한 회원</button>
+      <button class="tab-btn" onclick="switchTab('tab-points', this)">포인트 내역</button>
+      <button class="tab-btn" onclick="switchTab('tab-withdraw', this)">출금 신청</button>
+      <button class="tab-btn" onclick="switchTab('tab-withdrawals', this)">출금 내역</button>
+    </div>
+
+    <div class="tab-content active" id="tab-referred">
+      <table>
+        <thead><tr><th>이름</th><th>이메일</th><th>구독 플랜</th><th>가입일</th></tr></thead>
+        <tbody id="referred-tbody"><tr><td colspan="4" style="text-align:center;color:var(--gray);">로딩 중...</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="tab-content" id="tab-points">
+      <table>
+        <thead><tr><th>일시</th><th>구분</th><th>금액</th><th>내용</th></tr></thead>
+        <tbody id="points-tbody"><tr><td colspan="4" style="text-align:center;color:var(--gray);">로딩 중...</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="tab-content" id="tab-withdraw">
+      <div class="withdraw-form">
+        <div class="withdraw-note">
+          • 최소 출금: <strong>10,000P</strong><br>
+          • 수수료: <strong>20%</strong> 차감 후 현금 지급<br>
+          • 예) 100,000P 신청 → 80,000원 지급<br>
+          • 승인 후 영업일 기준 3~5일 내 입금
+        </div>
+        <div id="withdraw-preview" style="display:none;padding:12px 16px;background:rgba(212,255,0,0.08);border:1px solid rgba(212,255,0,0.2);border-radius:8px;font-size:13px;"></div>
+        <div class="form-row">
+          <label>출금 포인트 (P)</label>
+          <input type="number" id="w-points" placeholder="예) 50000" min="10000" step="1000" oninput="previewWithdraw()" />
+        </div>
+        <div class="form-row"><label>은행명</label><input type="text" id="w-bank" placeholder="예) 하나은행" /></div>
+        <div class="form-row"><label>계좌번호</label><input type="text" id="w-account" placeholder="- 없이 입력" /></div>
+        <div class="form-row"><label>예금주</label><input type="text" id="w-holder" placeholder="홍길동" /></div>
+        <button class="btn-lime" style="padding:13px;" onclick="submitWithdraw()">출금 신청</button>
+        <p id="w-err" style="color:#ff5555;font-size:13px;display:none;"></p>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-withdrawals">
+      <table>
+        <thead><tr><th>신청일</th><th>신청 P</th><th>지급액</th><th>계좌</th><th>상태</th></tr></thead>
+        <tbody id="withdrawals-tbody"><tr><td colspan="5" style="text-align:center;color:var(--gray);">로딩 중...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+var affData = null;
+
+async function loadData() {
+  try {
+    var res = await fetch('/api/affiliate/me', { credentials: 'include' });
+    if (!res.ok) { window.location.href = '/dashboard'; return; }
+    affData = await res.json();
+
+    document.getElementById('aff-email').textContent = affData.email;
+    document.getElementById('stat-points').textContent = (affData.points || 0).toLocaleString() + ' P';
+    document.getElementById('stat-referred').textContent = affData.referred_count + ' 명';
+    var earned = (affData.transactions || []).filter(function(t){ return t.type === 'earn'; }).reduce(function(s,t){ return s+t.amount; }, 0);
+    document.getElementById('stat-earned').textContent = earned.toLocaleString() + ' P';
+
+    document.getElementById('ref-link-input').value = location.origin + '/?ref=' + affData.referral_code;
+
+    var rtb = document.getElementById('referred-tbody');
+    if (!affData.referred_users || affData.referred_users.length === 0) {
+      rtb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#666;">아직 초대한 회원이 없습니다.</td></tr>';
+    } else {
+      rtb.innerHTML = affData.referred_users.map(function(u) {
+        return '<tr><td>' + u.name + '</td><td>' + u.email + '</td><td>' +
+          (u.plan ? '<span class="badge-sm badge-green">' + u.plan + '</span>' : '<span class="badge-sm badge-gray">없음</span>') +
+          '</td><td>' + new Date(u.joined_at).toLocaleDateString('ko') + '</td></tr>';
+      }).join('');
+    }
+
+    var ptb = document.getElementById('points-tbody');
+    if (!affData.transactions || affData.transactions.length === 0) {
+      ptb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#666;">포인트 내역이 없습니다.</td></tr>';
+    } else {
+      var labelMap = { earn:'적립', spend:'사용', withdraw:'출금', refund:'환불' };
+      var clsMap2 = { earn:'badge-green', refund:'badge-gold', withdraw:'badge-gray', spend:'badge-gray' };
+      ptb.innerHTML = affData.transactions.map(function(t) {
+        var sign = t.amount > 0 ? '+' : '';
+        return '<tr><td>' + new Date(t.created_at).toLocaleDateString('ko') + '</td>' +
+          '<td><span class="badge-sm ' + (clsMap2[t.type]||'badge-gray') + '">' + (labelMap[t.type]||t.type) + '</span></td>' +
+          '<td style="font-weight:700;color:' + (t.amount>0?'var(--lime)':'#ff6b6b') + '">' + sign + t.amount.toLocaleString() + 'P</td>' +
+          '<td>' + (t.description||'-') + '</td></tr>';
+      }).join('');
+    }
+
+    var wtb = document.getElementById('withdrawals-tbody');
+    if (!affData.withdrawals || affData.withdrawals.length === 0) {
+      wtb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#666;">출금 내역이 없습니다.</td></tr>';
+    } else {
+      var sMap = { pending:'검토중', approved:'승인', rejected:'거절' };
+      var scMap = { pending:'badge-gray', approved:'badge-green', rejected:'badge-gray' };
+      wtb.innerHTML = affData.withdrawals.map(function(w) {
+        return '<tr><td>' + new Date(w.created_at).toLocaleDateString('ko') + '</td>' +
+          '<td>' + w.points_amount.toLocaleString() + 'P</td>' +
+          '<td>' + w.cash_amount.toLocaleString() + '원</td>' +
+          '<td>' + w.bank_name + ' ' + w.bank_account + '</td>' +
+          '<td><span class="badge-sm ' + (scMap[w.status]||'badge-gray') + '">' + (sMap[w.status]||w.status) + '</span></td></tr>';
+      }).join('');
+    }
+  } catch(e) { console.error(e); }
+}
+
+function copyRefLink() {
+  var v = document.getElementById('ref-link-input').value;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(v).then(function(){ alert('링크가 복사되었습니다.'); });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = v; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    alert('링크가 복사되었습니다.');
+  }
+}
+
+function previewWithdraw() {
+  var pts = parseInt(document.getElementById('w-points').value) || 0;
+  var preview = document.getElementById('withdraw-preview');
+  if (pts >= 10000) {
+    var fee = Math.floor(pts * 0.2);
+    var cash = pts - fee;
+    preview.style.display = 'block';
+    preview.innerHTML = '신청 포인트: <strong>' + pts.toLocaleString() + 'P</strong> → 수수료 ' + fee.toLocaleString() + 'P (20%) → 실지급 <strong style="color:var(--lime)">' + cash.toLocaleString() + '원</strong>';
+  } else {
+    preview.style.display = 'none';
+  }
+}
+
+async function submitWithdraw() {
+  var err = document.getElementById('w-err');
+  err.style.display = 'none';
+  var points_amount = parseInt(document.getElementById('w-points').value);
+  var bank_name = document.getElementById('w-bank').value.trim();
+  var bank_account = document.getElementById('w-account').value.trim();
+  var bank_holder = document.getElementById('w-holder').value.trim();
+  if (!points_amount || points_amount < 10000) { err.textContent = '최소 10,000P 이상 입력해주세요.'; err.style.display = 'block'; return; }
+  if (!bank_name || !bank_account || !bank_holder) { err.textContent = '계좌 정보를 모두 입력해주세요.'; err.style.display = 'block'; return; }
+  try {
+    var res = await fetch('/api/affiliate/withdraw', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ points_amount: points_amount, bank_name: bank_name, bank_account: bank_account, bank_holder: bank_holder }),
+    });
+    var data = await res.json();
+    if (!res.ok) { err.textContent = data.error; err.style.display = 'block'; return; }
+    alert('출금 신청 완료!\n실지급액: ' + data.cash_amount.toLocaleString() + '원');
+    loadData();
+  } catch(e) { err.textContent = '서버 오류가 발생했습니다.'; err.style.display = 'block'; }
+}
+
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-content').forEach(function(t){ t.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+
+async function doLogout() {
+  await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+  window.location.href = '/';
+}
+
+loadData();
+window.addEventListener('scroll', function() {
+  document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 50);
+});
+</script>
+</body>
+</html>

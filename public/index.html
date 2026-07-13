@@ -281,6 +281,7 @@
   <div class="container">
     <p class="section-label">PACKAGES</p>
     <h2 class="section-title">당신에게 맞는 기법을 선택하세요</h2>
+    <div id="aff-price-banner" style="display:none;text-align:center;padding:10px 20px;background:rgba(212,255,0,0.1);border:1px solid rgba(212,255,0,0.3);border-radius:8px;color:#d4ff00;font-size:14px;font-weight:700;margin-bottom:24px;"></div>
     <div class="packages-grid">
 
       <!-- H시그널 지표 -->
@@ -290,7 +291,7 @@
           <h3 class="pkg-name">H시그널 지표</h3>
           <div class="pkg-price-original">정상가 ₩250,000/월</div>
           <div style="visibility:hidden;display:flex;gap:6px;flex-wrap:wrap;"><span class="pkg-promo-tag">placeholder</span></div>
-          <div class="pkg-price">₩150,000<span>/월</span></div>
+          <div class="pkg-price" data-product="hsignal">₩150,000<span>/월</span></div>
           <ul class="pkg-features">
             <li><span class="check lime">✓</span> 최고의 손익비 타점 잡기 전용</li>
             <li><span class="check lime">✓</span> 원하는 종목의 타점잡기</li>
@@ -300,7 +301,7 @@
           </ul>
           <div style="margin-top:auto;">
             <div style="margin-bottom:10px;padding:10px 14px;border-radius:8px;font-size:12px;visibility:hidden;">placeholder</div>
-            <button class="btn-lime btn-buy" onclick="startPurchase('hsignal', 150000, 'H시그널 지표')">
+            <button class="btn-lime btn-buy" data-product="hsignal" data-planname="H시그널 지표" onclick="startPurchase('hsignal', 150000, 'H시그널 지표')">
               H시그널 시작하기
             </button>
           </div>
@@ -324,7 +325,7 @@
             <span class="pkg-promo-tag">첫결제 할인</span>
             <span class="pkg-promo-tag">연장시 해당가격 유지가능</span>
           </div>
-          <div class="pkg-price">₩349,000<span>/월</span></div>
+          <div class="pkg-price" data-product="start">₩349,000<span>/월</span></div>
           <ul class="pkg-features">
             <li><span class="check lime">✓</span> H시그널 지표 제공</li>
             <li><span class="check lime">✓</span> AI 알고리즘 매매 프로그램</li>
@@ -336,7 +337,7 @@
             <div style="margin-bottom:10px;padding:10px 14px;background:rgba(212,255,0,0.07);border:1px dashed rgba(212,255,0,0.3);border-radius:8px;font-size:12px;color:#d4ff00;text-align:center;">
               🎁 회원가입 시 7일 무료체험 제공
             </div>
-            <button class="btn-lime btn-buy" style="margin-top:0;" onclick="startPurchase('start', 349000, '스타트패키지')">
+            <button class="btn-lime btn-buy" style="margin-top:0;" data-product="start" data-planname="H시그널 종목 검색기" onclick="startPurchase('start', 349000, 'H시그널 종목 검색기')">
               7일 무료체험 해보기
             </button>
           </div>
@@ -356,7 +357,7 @@
           <h3 class="pkg-name">VIP서비스</h3>
           <div class="pkg-price-original" style="visibility:hidden;">정상가 ₩0/월</div>
           <div style="visibility:hidden;display:flex;gap:6px;flex-wrap:wrap;"><span class="pkg-promo-tag">placeholder</span></div>
-          <div class="pkg-price">₩2,000,000<span>/월</span></div>
+          <div class="pkg-price" data-product="vip">₩2,000,000<span>/월</span></div>
           <ul class="pkg-features">
             <li><span class="check gold">✓</span> 스타트패키지 전체 포함</li>
             <li><span class="check gold">✓</span> High-end 종목 전용 프로그램 제공</li>
@@ -366,7 +367,7 @@
           </ul>
           <div style="margin-top:auto;">
             <div style="margin-bottom:10px;padding:10px 14px;border-radius:8px;font-size:12px;visibility:hidden;">placeholder</div>
-            <button class="btn-lime btn-buy" onclick="startPurchase('vip', 2000000, 'VIP서비스')">
+            <button class="btn-lime btn-buy" data-product="vip" data-planname="VIP서비스" onclick="startPurchase('vip', 2000000, 'VIP서비스')">
               VIP 시작하기
             </button>
           </div>
@@ -982,5 +983,45 @@ document.getElementById('ethics-overlay').addEventListener('click', function(e) 
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 <script src="/js/main.js"></script>
+<script>
+// 제휴사/추천고객 가격 적용
+const AFF_PRICE_LABELS = {
+  affiliate: { hsignal: '₩30,000',  start: '₩120,000', vip: '₩100,000' },
+  referred:  { hsignal: '₩70,000',  start: '₩250,000', vip: '₩200,000' },
+};
+const AFF_PRICE_AMOUNTS = {
+  affiliate: { hsignal: 30000,  start: 120000, vip: 100000 },
+  referred:  { hsignal: 70000,  start: 250000, vip: 200000 },
+};
+
+function applyAffPrices(userType) {
+  if (!userType || userType === 'normal') return;
+  const labels = AFF_PRICE_LABELS[userType];
+  const amounts = AFF_PRICE_AMOUNTS[userType];
+  if (!labels) return;
+
+  document.querySelectorAll('.pkg-price[data-product]').forEach(el => {
+    const k = el.dataset.product;
+    if (labels[k]) el.innerHTML = `${labels[k]}<span>/월</span>`;
+  });
+
+  document.querySelectorAll('.btn-buy[data-product]').forEach(btn => {
+    const k = btn.dataset.product;
+    const planName = btn.dataset.planname;
+    if (amounts[k]) {
+      btn.setAttribute('onclick', `startPurchase('${k}', ${amounts[k]}, '${planName}')`);
+    }
+  });
+
+  // 안내 배너 노출
+  const banner = document.getElementById('aff-price-banner');
+  if (banner) {
+    banner.textContent = userType === 'affiliate'
+      ? '✅ 제휴사 적용가(도매가)가 적용되었습니다.'
+      : '✅ 추천코드 할인가가 적용되었습니다.';
+    banner.style.display = 'block';
+  }
+}
+</script>
 </body>
 </html>

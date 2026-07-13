@@ -22,10 +22,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/payment', require('./routes/payment'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/affiliate', require('./routes/affiliate'));
 
 // SPA fallback
 app.get('*', (req, res) => {
-  const pages = ['login', 'register', 'dashboard', 'success', 'fail', 'admin'];
+  const pages = ['login', 'register', 'dashboard', 'success', 'fail', 'admin', 'affiliate'];
   const page = pages.find(p => req.path === `/${p}`);
   if (page) {
     res.sendFile(path.join(__dirname, 'public', `${page}.html`));
