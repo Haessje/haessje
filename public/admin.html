@@ -164,6 +164,7 @@
   <div class="tabs">
     <button class="tab-btn active" data-tab="users">회원 관리</button>
     <button class="tab-btn" data-tab="orders">주문 내역</button>
+    <button class="tab-btn" data-tab="affiliate">제휴사 관리</button>
   </div>
 
   <!-- 회원 패널 -->
@@ -191,6 +192,43 @@
       </thead>
       <tbody id="orders-body">
         <tr><td colspan="8" class="empty">로딩 중...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 제휴사 관리 패널 -->
+  <div class="panel" id="panel-affiliate">
+
+    <!-- 초대 링크 발급 -->
+    <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:24px;">
+      <h3 style="font-size:16px;font-weight:700;margin-bottom:8px;">제휴사 초대 링크 발급</h3>
+      <p style="font-size:13px;color:var(--gray);margin-bottom:16px;">링크로 가입하면 자동으로 제휴사(도매가) 등급이 부여됩니다.</p>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <input id="aff-link-output" readonly style="flex:1;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;padding:12px 14px;color:var(--white);font-size:13px;outline:none;" placeholder="버튼을 눌러 링크를 생성하세요" />
+        <button class="btn-lime" style="padding:11px 20px;font-size:13px;white-space:nowrap;" onclick="generateAffLink()">링크 생성</button>
+        <button class="btn-sm btn-assign" style="padding:11px 16px;" onclick="copyAffLink()">복사</button>
+      </div>
+    </div>
+
+    <!-- 제휴사 목록 -->
+    <h3 style="font-size:15px;font-weight:700;margin-bottom:14px;">제휴사 목록</h3>
+    <table style="margin-bottom:28px;">
+      <thead>
+        <tr><th>이름</th><th>이메일</th><th>추천코드</th><th>보유 포인트</th><th>가입일</th></tr>
+      </thead>
+      <tbody id="affiliates-body">
+        <tr><td colspan="5" class="empty">로딩 중...</td></tr>
+      </tbody>
+    </table>
+
+    <!-- 출금 신청 목록 -->
+    <h3 style="font-size:15px;font-weight:700;margin-bottom:14px;">출금 신청 목록</h3>
+    <table>
+      <thead>
+        <tr><th>신청일</th><th>이름</th><th>신청 P</th><th>지급액</th><th>계좌</th><th>상태</th><th>처리</th></tr>
+      </thead>
+      <tbody id="withdrawals-body">
+        <tr><td colspan="7" class="empty">로딩 중...</td></tr>
       </tbody>
     </table>
   </div>
@@ -555,6 +593,92 @@ async function logout() {
   window.location.href = '/';
 }
 
+// ── 제휴사 관리 ──
+async function generateAffLink() {
+  const res = await fetch('/api/admin/affiliate-invite', {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  const data = await res.json();
+  if (res.ok) {
+    document.getElementById('aff-link-output').value = data.link;
+  } else {
+    alert(data.error || '오류가 발생했습니다.');
+  }
+}
+
+function copyAffLink() {
+  const val = document.getElementById('aff-link-output').value;
+  if (!val) { alert('먼저 링크를 생성해주세요.'); return; }
+  navigator.clipboard?.writeText(val).then(() => alert('복사되었습니다.')).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = val; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    alert('복사되었습니다.');
+  });
+}
+
+async function loadAffiliates() {
+  const [affRes, wRes] = await Promise.all([
+    fetch('/api/admin/affiliates', { credentials: 'include' }),
+    fetch('/api/admin/withdrawals', { credentials: 'include' }),
+  ]);
+  const { affiliates } = await affRes.json();
+  const { withdrawals } = await wRes.json();
+
+  const ab = document.getElementById('affiliates-body');
+  if (!affiliates || affiliates.length === 0) {
+    ab.innerHTML = '<tr><td colspan="5" class="empty">등록된 제휴사가 없습니다.</td></tr>';
+  } else {
+    ab.innerHTML = affiliates.map(u => `
+      <tr>
+        <td>${u.name}</td>
+        <td>${u.email}</td>
+        <td><code style="background:rgba(255,255,255,0.08);padding:2px 8px;border-radius:4px;font-size:12px;">${u.referral_code || '-'}</code></td>
+        <td style="color:var(--lime);font-weight:700;">${(u.points || 0).toLocaleString()} P</td>
+        <td>${fmtDate(u.created_at)}</td>
+      </tr>`).join('');
+  }
+
+  const wb = document.getElementById('withdrawals-body');
+  if (!withdrawals || withdrawals.length === 0) {
+    wb.innerHTML = '<tr><td colspan="7" class="empty">출금 신청이 없습니다.</td></tr>';
+  } else {
+    const sMap = { pending:'검토중', approved:'승인완료', rejected:'거절' };
+    const bMap = { pending:'badge-pending', approved:'badge-done', rejected:'badge-cancelled' };
+    wb.innerHTML = withdrawals.map(w => `
+      <tr>
+        <td>${fmtDate(w.created_at)}</td>
+        <td>${w.user_name || '-'}</td>
+        <td>${w.points_amount.toLocaleString()} P</td>
+        <td style="font-weight:700;">₩${w.cash_amount.toLocaleString()}</td>
+        <td style="font-size:12px;">${w.bank_name} ${w.bank_account}<br><span style="color:var(--gray);">${w.bank_holder}</span></td>
+        <td><span class="badge ${bMap[w.status]||'badge-pending'}">${sMap[w.status]||w.status}</span></td>
+        <td>
+          ${w.status === 'pending' ? `
+            <div class="row-actions">
+              <button class="btn-sm btn-confirm" onclick="processWithdrawal(${w.id},'approved')">승인</button>
+              <button class="btn-sm btn-cancel" onclick="processWithdrawal(${w.id},'rejected')">거절</button>
+            </div>` : '-'}
+        </td>
+      </tr>`).join('');
+  }
+}
+
+async function processWithdrawal(id, status) {
+  const label = status === 'approved' ? '승인' : '거절';
+  const note = status === 'rejected' ? (prompt('거절 사유 (선택):') || '') : '';
+  if (!confirm(`출금 신청을 ${label}하시겠습니까?`)) return;
+  const res = await fetch(`/api/admin/withdrawals/${id}/process`, {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status, admin_note: note }),
+  });
+  const data = await res.json();
+  if (res.ok) { alert(`${label}되었습니다.`); loadAffiliates(); }
+  else alert(data.error || '오류');
+}
+
 // 탭 전환
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -568,9 +692,16 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 (async () => {
   initYearFilter();
   if (await checkAdmin()) {
-    await Promise.all([loadStats(), loadUsers(), loadOrders()]);
+    await Promise.all([loadStats(), loadUsers(), loadOrders(), loadAffiliates()]);
   }
 })();
+
+// 탭 전환 시 제휴사 탭이면 새로고침
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (btn.dataset.tab === 'affiliate') loadAffiliates();
+  });
+});
 </script>
 </body>
 </html>
