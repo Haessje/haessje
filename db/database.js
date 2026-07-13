@@ -17,6 +17,11 @@ module.exports = {
         .from('users').select('*').eq('id', id).single();
       return data || null;
     },
+    async findByPhone(phone) {
+      const { data } = await supabase
+        .from('users').select('id').eq('phone', phone).single();
+      return data || null;
+    },
     async findByReferralCode(code) {
       const { data } = await supabase
         .from('users').select('*').eq('referral_code', code).single();

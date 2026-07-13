@@ -8,13 +8,16 @@ const db = require('../db/database');
 // 회원가입
 router.post('/register', async (req, res) => {
   const { email, password, name, phone, aff_token, ref_code } = req.body;
-  if (!email || !password || !name) {
-    return res.status(400).json({ error: '필수 항목을 입력해주세요.' });
+  if (!email || !password || !name || !phone) {
+    return res.status(400).json({ error: '모든 항목을 입력해주세요.' });
   }
 
   try {
     const existing = await db.users.findByEmail(email);
     if (existing) return res.status(409).json({ error: '이미 가입된 이메일입니다.' });
+
+    const existingPhone = await db.users.findByPhone(phone.trim());
+    if (existingPhone) return res.status(409).json({ error: '이미 사용 중인 휴대폰 번호입니다.' });
 
     const hashed = await bcrypt.hash(password, 10);
     const user = await db.users.create({ email, password: hashed, name, phone });
