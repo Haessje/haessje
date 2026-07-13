@@ -42,6 +42,7 @@
 <nav id="navbar">
   <a href="/" class="logo">Haessje<span class="dot">.</span></a>
   <div class="nav-right">
+    <a href="/affiliate" id="nav-affiliate-btn" class="btn-ghost hidden" style="border:1px solid rgba(212,255,0,0.4);color:var(--lime);padding:8px 16px;font-size:13px;border-radius:6px;text-decoration:none;">제휴사 대시보드</a>
     <button class="btn-ghost" onclick="logout()">로그아웃</button>
   </div>
 </nav>
@@ -104,6 +105,11 @@ async function loadDashboard() {
 
     // 인사
     document.getElementById('greeting-name').textContent = `— ${user.name}님`;
+
+    // 제휴사면 대시보드 링크 노출
+    if (user.user_type === 'affiliate') {
+      document.getElementById('nav-affiliate-btn')?.classList.remove('hidden');
+    }
 
     // 구독 현황
     const planSection = document.getElementById('plan-section');

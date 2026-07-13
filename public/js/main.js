@@ -211,7 +211,13 @@ function closeAuthModal() {
       document.getElementById('nav-dashboard-btn')?.classList.remove('hidden');
       try {
         const pr = await fetch('/api/payment/my-prices', { credentials: 'include' });
-        if (pr.ok) { const { user_type } = await pr.json(); applyAffPrices(user_type); }
+        if (pr.ok) {
+          const { user_type } = await pr.json();
+          applyAffPrices(user_type);
+          if (user_type === 'affiliate') {
+            document.getElementById('nav-affiliate-btn')?.classList.remove('hidden');
+          }
+        }
       } catch {}
     }
   } catch {}
