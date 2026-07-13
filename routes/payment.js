@@ -75,6 +75,13 @@ router.post('/create-order', authMiddleware, async (req, res) => {
             description: `${name} 판매 마진 (${user.name}님)`,
             order_id: orderId,
           });
+          // 결제 발생 시 제휴사 만료일 오늘 기준 +90일로 갱신
+          const newExpiry = new Date();
+          newExpiry.setDate(newExpiry.getDate() + 90);
+          const curExpiry = affiliateUser.affiliate_expires_at ? new Date(affiliateUser.affiliate_expires_at) : null;
+          if (!curExpiry || curExpiry < newExpiry) {
+            await db.users.setAffiliateExpiry(affiliateUser.id, newExpiry.toISOString());
+          }
         }
       }
     }

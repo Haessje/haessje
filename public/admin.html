@@ -217,7 +217,7 @@
     <h3 style="font-size:15px;font-weight:700;margin-bottom:14px;">제휴사 목록</h3>
     <table style="margin-bottom:28px;">
       <thead>
-        <tr><th>이름</th><th>이메일</th><th>추천코드</th><th>보유 포인트</th><th>가입일</th><th style="width:220px;">작업</th></tr>
+        <tr><th>이름</th><th>이메일</th><th>추천코드</th><th>보유 포인트</th><th>제휴 만료일</th><th style="width:240px;">작업</th></tr>
       </thead>
       <tbody id="affiliates-body">
         <tr><td colspan="6" class="empty">로딩 중...</td></tr>
@@ -317,6 +317,7 @@ async function loadUsers() {
             <button class="btn-sm btn-extend" onclick="changePeriod(${u.id}, '${u.name}', '${u.plan_expires_at || ''}')">기간 변경</button>
             <button class="btn-sm btn-remove" onclick="removePlan(${u.id}, '${u.name}')">해제</button>
             <button class="btn-sm btn-password" onclick="resetPassword(${u.id}, '${u.name}')">비번 재설정</button>
+            ${u.user_type !== 'affiliate' ? `<button class="btn-sm btn-points" onclick="upgradeToAffiliate(${u.id}, '${u.name}')">제휴사 업그레이드</button>` : ''}
             <button class="btn-sm btn-delete" onclick="deleteUser(${u.id}, '${u.name}')">삭제</button>
           </div>
         </td>
@@ -634,21 +635,37 @@ async function loadAffiliates() {
   if (!affiliates || affiliates.length === 0) {
     ab.innerHTML = '<tr><td colspan="6" class="empty">등록된 제휴사가 없습니다.</td></tr>';
   } else {
-    ab.innerHTML = affiliates.map(u => `
+    ab.innerHTML = affiliates.map(u => {
+      const expiry = u.affiliate_expires_at ? new Date(u.affiliate_expires_at) : null;
+      const now = new Date();
+      const daysLeft = expiry ? Math.ceil((expiry - now) / 86400000) : null;
+      let expiryHtml;
+      if (!expiry) {
+        expiryHtml = '<span style="color:var(--gray);">미설정</span>';
+      } else if (daysLeft <= 0) {
+        expiryHtml = `<span style="color:#ff4444;">${fmtDate(expiry.toISOString())} (만료)</span>`;
+      } else if (daysLeft <= 14) {
+        expiryHtml = `<span style="color:#ffaa44;">${fmtDate(expiry.toISOString())} (D-${daysLeft})</span>`;
+      } else {
+        expiryHtml = `<span style="color:var(--lime);">${fmtDate(expiry.toISOString())} (D-${daysLeft})</span>`;
+      }
+      return `
       <tr>
         <td>${u.name}</td>
         <td>${u.email}</td>
         <td><code style="background:rgba(255,255,255,0.08);padding:2px 8px;border-radius:4px;font-size:12px;">${u.referral_code || '-'}</code></td>
         <td style="color:var(--lime);font-weight:700;">${(u.points || 0).toLocaleString()} P</td>
-        <td>${fmtDate(u.created_at)}</td>
+        <td style="font-size:12px;">${expiryHtml}</td>
         <td>
           <div class="row-actions">
+            <button class="btn-sm btn-extend" onclick="setAffExpiry(${u.id}, '${u.name}', '${u.affiliate_expires_at || ''}')">기간 변경</button>
             <button class="btn-sm btn-points" onclick="editAffPoints(${u.id}, '${u.name}', ${u.points || 0})">포인트 수정</button>
             <button class="btn-sm btn-downgrade" onclick="downgradeAff(${u.id}, '${u.name}')">등급 강등</button>
             <button class="btn-sm btn-delete" onclick="deleteAff(${u.id}, '${u.name}')">삭제</button>
           </div>
         </td>
-      </tr>`).join('');
+      </tr>`;
+    }).join('');
   }
 
   const wb = document.getElementById('withdrawals-body');
@@ -684,6 +701,79 @@ async function deleteUser(userId, userName) {
   const data = await res.json();
   if (res.ok) { alert('삭제되었습니다.'); loadUsers(); loadStats(); }
   else alert(data.error || '오류');
+}
+
+async function upgradeToAffiliate(userId, userName) {
+  const daysInput = prompt(`${userName}님을 제휴사로 업그레이드합니다.\n유효 기간(일, 기본 90일):`);
+  if (daysInput === null) return;
+  const days = parseInt(daysInput) || 90;
+  if (!confirm(`${userName}님을 제휴사(${days}일)로 업그레이드하시겠습니까?`)) return;
+
+  const res = await fetch(`/api/admin/users/${userId}/set-affiliate`, {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ days }),
+  });
+  const data = await res.json();
+  if (res.ok) {
+    alert(`제휴사로 업그레이드되었습니다.\n추천코드: ${data.referralCode}\n만료일: ${new Date(data.expiresAt).toLocaleDateString('ko-KR')}`);
+    loadUsers(); loadAffiliates();
+  } else alert(data.error || '오류');
+}
+
+async function setAffExpiry(userId, userName, currentExpiry) {
+  const overlay = document.createElement('div');
+  overlay.className = 'amodal-overlay';
+  overlay.id = 'aff-expiry-overlay';
+
+  const curStr = currentExpiry ? new Date(currentExpiry).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+  const curLabel = currentExpiry ? new Date(currentExpiry).toLocaleDateString('ko-KR') : '미설정';
+
+  overlay.innerHTML = `
+    <div class="amodal-box">
+      <h3>제휴사 기간 변경</h3>
+      <p class="amodal-sub">${userName}님 · 현재 만료일: <strong style="color:var(--lime);">${curLabel}</strong></p>
+      <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <button class="btn-sm btn-assign" onclick="setAffExpiryRelative(30)">+30일</button>
+        <button class="btn-sm btn-assign" onclick="setAffExpiryRelative(60)">+60일</button>
+        <button class="btn-sm btn-assign" onclick="setAffExpiryRelative(90)">+90일</button>
+        <button class="btn-sm btn-assign" onclick="setAffExpiryRelative(180)">+180일</button>
+      </div>
+      <p class="amodal-label">만료일 직접 설정</p>
+      <input type="date" id="aff-expiry-input" value="${curStr}"
+        style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);
+               background:var(--card-bg);color:var(--white);font-size:15px;margin-bottom:24px;" />
+      <div class="amodal-actions">
+        <button class="btn-lime" style="flex:1;padding:12px;" onclick="submitAffExpiry(${userId})">적용</button>
+        <button class="btn-ghost" style="padding:12px 20px;" onclick="document.getElementById('aff-expiry-overlay').remove()">취소</button>
+      </div>
+    </div>
+  `;
+  overlay._baseExpiry = curStr;
+  document.body.appendChild(overlay);
+}
+
+function setAffExpiryRelative(days) {
+  const base = new Date();
+  base.setDate(base.getDate() + days);
+  document.getElementById('aff-expiry-input').value = base.toISOString().split('T')[0];
+}
+
+async function submitAffExpiry(userId) {
+  const val = document.getElementById('aff-expiry-input').value;
+  if (!val) { alert('날짜를 선택해주세요.'); return; }
+  document.getElementById('aff-expiry-overlay').remove();
+
+  const res = await fetch(`/api/admin/affiliates/${userId}/expiry`, {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ expiresAt: val }),
+  });
+  const data = await res.json();
+  if (res.ok) {
+    alert(`만료일이 ${new Date(data.expiresAt).toLocaleDateString('ko-KR')}로 변경되었습니다.`);
+    loadAffiliates();
+  } else alert(data.error || '오류');
 }
 
 async function editAffPoints(userId, userName, currentPoints) {

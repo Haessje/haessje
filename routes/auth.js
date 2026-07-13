@@ -27,7 +27,8 @@ router.post('/register', async (req, res) => {
       const invite = await db.affiliateInvites.findByToken(aff_token);
       if (invite && !invite.used_by_user_id) {
         const referralCode = crypto.randomBytes(4).toString('hex').toUpperCase();
-        await db.users.setAffiliate(user.id, referralCode);
+        const affExpiry = new Date(); affExpiry.setDate(affExpiry.getDate() + 90);
+        await db.users.setAffiliate(user.id, referralCode, affExpiry.toISOString());
         await db.affiliateInvites.markUsed(aff_token, user.id);
       }
     }

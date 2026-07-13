@@ -50,9 +50,14 @@ module.exports = {
         .from('users').update({ trial_used: true }).eq('id', id);
       if (error) throw error;
     },
-    async setAffiliate(id, referralCode) {
+    async setAffiliate(id, referralCode, expiresAt) {
       const { error } = await supabase
-        .from('users').update({ user_type: 'affiliate', referral_code: referralCode }).eq('id', id);
+        .from('users').update({ user_type: 'affiliate', referral_code: referralCode, affiliate_expires_at: expiresAt || null }).eq('id', id);
+      if (error) throw error;
+    },
+    async setAffiliateExpiry(id, expiresAt) {
+      const { error } = await supabase
+        .from('users').update({ affiliate_expires_at: expiresAt }).eq('id', id);
       if (error) throw error;
     },
     async setReferred(id, referredBy) {

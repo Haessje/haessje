@@ -238,27 +238,17 @@ router.get('/affiliate-invites', adminMiddleware, async (req, res) => {
   }
 });
 
-// 제휴사 목록 + 포인트 현황 + 3개월 미결제 자동 강등
+// 제휴사 목록 + 만료일 기반 자동 강등
 router.get('/affiliates', adminMiddleware, async (req, res) => {
   try {
-    const threeMonthsAgo = new Date();
-    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-
+    const now = new Date();
     const allUsers = await db.users.findAll();
     const currentAffiliates = allUsers.filter(u => u.user_type === 'affiliate');
 
     for (const aff of currentAffiliates) {
-      const transactions = await db.pointsTransactions.findByUserId(aff.id);
-      const earnTxns = transactions.filter(t => t.type === 'earn');
-
-      let shouldDowngrade = false;
-      if (earnTxns.length === 0) {
-        if (new Date(aff.created_at) < threeMonthsAgo) shouldDowngrade = true;
-      } else {
-        if (new Date(earnTxns[0].created_at) < threeMonthsAgo) shouldDowngrade = true;
+      if (aff.affiliate_expires_at && new Date(aff.affiliate_expires_at) < now) {
+        await db.users.downgradeAffiliate(aff.id);
       }
-
-      if (shouldDowngrade) await db.users.downgradeAffiliate(aff.id);
     }
 
     const freshUsers = await db.users.findAll();
@@ -266,6 +256,42 @@ router.get('/affiliates', adminMiddleware, async (req, res) => {
       .filter(u => u.user_type === 'affiliate')
       .map(u => { const { password, ...safe } = u; return safe; });
     res.json({ affiliates });
+  } catch (err) {
+    res.status(500).json({ error: '서버 오류' });
+  }
+});
+
+// 일반 회원 → 제휴사 업그레이드
+router.post('/users/:id/set-affiliate', adminMiddleware, async (req, res) => {
+  const userId = parseInt(req.params.id);
+  const days = parseInt(req.body.days) || 90;
+  try {
+    const user = await db.users.findById(userId);
+    if (!user) return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
+    if (user.user_type === 'affiliate') return res.status(409).json({ error: '이미 제휴사 등급입니다.' });
+
+    const crypto = require('crypto');
+    const referralCode = crypto.randomBytes(4).toString('hex').toUpperCase();
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + days);
+
+    await db.users.setAffiliate(userId, referralCode, expiresAt.toISOString());
+    res.json({ success: true, referralCode, expiresAt: expiresAt.toISOString() });
+  } catch (err) {
+    res.status(500).json({ error: '서버 오류' });
+  }
+});
+
+// 제휴사 만료일 조정
+router.post('/affiliates/:id/expiry', adminMiddleware, async (req, res) => {
+  const userId = parseInt(req.params.id);
+  const { expiresAt } = req.body;
+  if (!expiresAt) return res.status(400).json({ error: '만료일을 입력해주세요.' });
+  try {
+    const d = new Date(expiresAt);
+    d.setHours(23, 59, 59, 0);
+    await db.users.setAffiliateExpiry(userId, d.toISOString());
+    res.json({ success: true, expiresAt: d.toISOString() });
   } catch (err) {
     res.status(500).json({ error: '서버 오류' });
   }
