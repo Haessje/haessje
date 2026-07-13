@@ -176,11 +176,11 @@
       <thead>
         <tr>
           <th>ID</th><th>이메일</th><th>이름</th><th>연락처</th>
-          <th>현재 플랜</th><th>만료일</th><th>가입일</th><th style="width:240px;">작업</th>
+          <th>등급</th><th>현재 플랜</th><th>만료일</th><th>가입일</th><th style="width:240px;">작업</th>
         </tr>
       </thead>
       <tbody id="users-body">
-        <tr><td colspan="8" class="empty">로딩 중...</td></tr>
+        <tr><td colspan="9" class="empty">로딩 중...</td></tr>
       </tbody>
     </table>
   </div>
@@ -294,7 +294,7 @@ async function loadUsers() {
   const body = document.getElementById('users-body');
 
   if (users.length === 0) {
-    body.innerHTML = '<tr><td colspan="8" class="empty">등록된 회원이 없습니다</td></tr>';
+    body.innerHTML = '<tr><td colspan="9" class="empty">등록된 회원이 없습니다</td></tr>';
     return;
   }
 
@@ -302,12 +302,24 @@ async function loadUsers() {
     const planBadge = u.plan
       ? `<span class="badge badge-plan-${u.plan}">${PLAN_NAMES[u.plan]}</span>`
       : `<span class="badge badge-plan-none">없음</span>`;
+
+    let gradeBadge;
+    if (u.user_type === 'affiliate') {
+      gradeBadge = `<span class="badge" style="background:rgba(212,255,0,0.15);color:var(--lime);">제휴사</span>`;
+    } else if (u.user_type === 'referred') {
+      const refName = u.referrer_name ? `<br><span style="color:var(--gray);font-size:10px;">via ${u.referrer_name}</span>` : '';
+      gradeBadge = `<span class="badge" style="background:rgba(100,150,255,0.15);color:#6496ff;">추천인</span>${refName}`;
+    } else {
+      gradeBadge = `<span style="color:var(--gray);font-size:12px;">일반</span>`;
+    }
+
     return `
       <tr>
         <td>#${u.id}</td>
         <td>${u.email}</td>
         <td>${u.name}</td>
         <td>${u.phone || '-'}</td>
+        <td>${gradeBadge}</td>
         <td>${planBadge}</td>
         <td>${fmtDate(u.plan_expires_at)}</td>
         <td>${fmtDate(u.created_at)}</td>

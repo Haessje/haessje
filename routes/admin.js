@@ -13,11 +13,20 @@ router.get('/check', adminMiddleware, (req, res) => {
   res.json({ isAdmin: true, email: req.user.email });
 });
 
-// 전체 회원 목록
+// 전체 회원 목록 (추천인의 경우 소속 제휴사 이름 포함)
 router.get('/users', adminMiddleware, async (req, res) => {
   try {
-    const users = (await db.users.findAll()).map(u => {
+    const allUsers = await db.users.findAll();
+    const affiliateMap = {};
+    allUsers.filter(u => u.referral_code).forEach(u => {
+      affiliateMap[u.referral_code] = u.name;
+    });
+
+    const users = allUsers.map(u => {
       const { password, ...safe } = u;
+      if (u.user_type === 'referred' && u.referred_by) {
+        safe.referrer_name = affiliateMap[u.referred_by] || null;
+      }
       return safe;
     });
     res.json({ users });
