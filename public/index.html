@@ -314,9 +314,9 @@
         <div class="pkg-front">
           <div class="pkg-badge">H-SIGNAL</div>
           <h3 class="pkg-name">H시그널 지표</h3>
-          <div class="pkg-price-original">정상가 ₩250,000/월</div>
+          <div class="pkg-price-original">정상가 ₩275,000/월</div>
           <div style="visibility:hidden;display:flex;gap:6px;flex-wrap:wrap;"><span class="pkg-promo-tag">placeholder</span></div>
-          <div class="pkg-price" data-product="hsignal">₩150,000<span>/월</span></div>
+          <div class="pkg-price" data-product="hsignal">₩165,000<span>/월</span><span style="font-size:11px;color:var(--gray);font-weight:400;margin-left:6px;">VAT포함</span></div>
           <ul class="pkg-features">
             <li><span class="check lime">✓</span> 최고의 손익비 타점 잡기 전용</li>
             <li><span class="check lime">✓</span> 원하는 종목의 타점잡기</li>
@@ -345,12 +345,12 @@
         <div class="pkg-front">
           <div class="pkg-badge lime">STARTER</div>
           <h3 class="pkg-name">스타트 패키지</h3>
-          <div class="pkg-price-original">정상가 ₩1,250,000/월</div>
+          <div class="pkg-price-original">정상가 ₩1,375,000/월</div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;">
             <span class="pkg-promo-tag">첫결제 할인</span>
             <span class="pkg-promo-tag">연장시 해당가격 유지가능</span>
           </div>
-          <div class="pkg-price" data-product="start">₩349,000<span>/월</span></div>
+          <div class="pkg-price" data-product="start">₩383,900<span>/월</span><span style="font-size:11px;color:var(--gray);font-weight:400;margin-left:6px;">VAT포함</span></div>
           <ul class="pkg-features">
             <li><span class="check lime">✓</span> H시그널 지표 제공</li>
             <li><span class="check lime">✓</span> AI 알고리즘 매매 프로그램</li>
@@ -382,7 +382,7 @@
           <h3 class="pkg-name">VIP서비스</h3>
           <div class="pkg-price-original" style="visibility:hidden;">정상가 ₩0/월</div>
           <div style="visibility:hidden;display:flex;gap:6px;flex-wrap:wrap;"><span class="pkg-promo-tag">placeholder</span></div>
-          <div class="pkg-price" data-product="vip">₩2,000,000<span>/월</span></div>
+          <div class="pkg-price" data-product="vip">₩1,430,000<span>/월</span><span style="font-size:11px;color:var(--gray);font-weight:400;margin-left:6px;">VAT포함</span></div>
           <ul class="pkg-features">
             <li><span class="check gold">✓</span> 스타트패키지 전체 포함</li>
             <li><span class="check gold">✓</span> High-end 종목 전용 프로그램 제공</li>
@@ -1012,12 +1012,12 @@ document.getElementById('ethics-overlay').addEventListener('click', function(e) 
 <script>
 // 제휴사/추천고객 가격 적용
 const AFF_PRICE_LABELS = {
-  affiliate: { hsignal: '₩30,000',  start: '₩100,000', vip: '₩2,000,000' },
-  referred:  { hsignal: '₩70,000',  start: '₩200,000', vip: '₩2,000,000' },
+  affiliate: { hsignal: '₩30,000',  start: '₩100,000', vip: '₩1,430,000' },
+  referred:  { hsignal: '₩70,000',  start: '₩200,000', vip: '₩1,430,000' },
 };
 const AFF_PRICE_AMOUNTS = {
-  affiliate: { hsignal: 30000,  start: 100000, vip: 2000000 },
-  referred:  { hsignal: 70000,  start: 200000, vip: 2000000 },
+  affiliate: { hsignal: 30000,  start: 100000, vip: 1430000 },
+  referred:  { hsignal: 70000,  start: 200000, vip: 1430000 },
 };
 
 function applyAffPrices(userType) {
@@ -1029,7 +1029,7 @@ function applyAffPrices(userType) {
   // 가격 업데이트
   document.querySelectorAll('.pkg-price[data-product]').forEach(el => {
     const k = el.dataset.product;
-    if (labels[k]) el.innerHTML = `${labels[k]}<span>/월</span>`;
+    if (labels[k]) el.innerHTML = `${labels[k]}<span>/월</span><span style="font-size:11px;color:var(--gray);font-weight:400;margin-left:6px;">VAT포함</span>`;
   });
 
   // 버튼 onclick 금액 업데이트
